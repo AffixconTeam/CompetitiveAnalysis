@@ -686,7 +686,6 @@ else:
         if polygon_coordinates[0][0] ==-37.829858869202262 and polygon_coordinates[0][1]==145.055265232660560:
             placeholder.markdown("Location: Dan Murphy's Camberwell")
 
-        st.write(polygon_coordinates[0][0])
 
         total_lat = 0
         total_lon = 0
