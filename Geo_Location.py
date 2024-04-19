@@ -12,7 +12,7 @@ import os
 from shapely.geometry import Point, Polygon
 from streamlit_folium import folium_static
 from collections import Counter
-
+from datetime import datetime, timedelta
 # Set up Streamlit app
 
 st.set_page_config(page_title='Geo Segmentation',page_icon=':earth_asia:',layout='wide')
@@ -30,7 +30,7 @@ st.write(custom_css, unsafe_allow_html=True)
 st.markdown(custom_css, unsafe_allow_html=True)
 
 st.title("🎯Location Insights")
-st.markdown(':green[**These all points are representing based on all device Mobile Advertisement Id**]')
+st.markdown(':green[**These all points are representing based on all device Mobile Advertisement Ids in people movement table**]')
 
 
 # Function to calculate Haversine distance between two coordinates
@@ -109,6 +109,11 @@ def diagrams(filtered_df):
 start_date = pd.Timestamp('2023-12-01')
 end_date = pd.Timestamp('2023-12-31')
 
+def frequency(count_within_radius_df):
+    count_within_radius_df_maid = count_within_radius_df.groupby('maid').size().reset_index(name='count').sort_values(by='count', ascending=False)
+    count_within_radius_df_maid=count_within_radius_df_maid[count_within_radius_df_maid['count']>1]
+
+    return count_within_radius_df_maid
 
 def more_insights(count_within_radius_df,user_lat,user_lon):
     st.markdown("Frequent Visition")
@@ -155,9 +160,9 @@ def more_insights(count_within_radius_df,user_lat,user_lon):
             'Thursday': 'rgb(31, 119, 180)', 'Friday': 'rgb(31, 119, 180)',
             'Saturday': 'rgb(255, 127, 14)', 'Sunday': 'rgb(255, 127, 14)'}
 
-    pandas_df['day_name'] = pd.Categorical(pandas_df['day_name'], categories=list(colors.keys()), ordered=True)
-    weekday_weekend_fig = px.bar(pandas_df.groupby('day_name').size().reset_index(name='count'), 
-                                x='day_name', y='count', color='day_name',
+    pandas_df['day'] = pd.Categorical(pandas_df['day_name'], categories=list(colors.keys()), ordered=True)
+    weekday_weekend_fig = px.bar(pandas_df.groupby('day').size().reset_index(name='count'), 
+                                x='day', y='count', color='day',
                                 color_discrete_map=colors, title='Weekday Vs Weekend Pattern',
                                 labels={'count': 'count'}, text='count')
     weekday_weekend_fig.update_layout(xaxis=dict(showgrid=False),
@@ -204,7 +209,7 @@ def more_insights(count_within_radius_df,user_lat,user_lon):
 
 
 
-    heatmap_data = pandas_df.pivot_table(index='day_name', columns='hour', aggfunc='size')
+    heatmap_data = pandas_df.pivot_table(index='day', columns='hour', aggfunc='size')
 
     # Reorder the rows of the heatmap data to match the order in the image
     heatmap_data = heatmap_data.reindex(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
@@ -225,6 +230,7 @@ def more_insights(count_within_radius_df,user_lat,user_lon):
     fig.update_layout(title='Visitation Insights',
                     xaxis_title='Hour of the Day',
                     yaxis_title='Day of the Week')
+    fig.update_traces(colorbar=dict(title='Count'))
 
     col1,col2=st.columns((0.6,0.3))
 
@@ -320,9 +326,34 @@ def more_insights(count_within_radius_df,user_lat,user_lon):
 
 st.sidebar.markdown('<p style="color: red;">Select Date Range</p>', unsafe_allow_html=True)
 
-# # Allow user to pick start and end dates
-selected_start_date = st.sidebar.date_input("Select Start Date", start_date)
-selected_end_date = st.sidebar.date_input("Select End Date", end_date)
+date_option=st.sidebar.radio("Select Date Option", options=["Date Range","mutiple Dates"], horizontal=True)
+
+if date_option == "mutiple Dates":
+    start_date = datetime.strptime('01/12/2023', '%d/%m/%Y')
+    end_date = datetime.strptime('31/12/2023', '%d/%m/%Y')
+    dates_list = []
+    current_date = start_date
+    while current_date <= end_date:
+        dates_list.append(current_date.strftime('%d/%m/%Y'))
+        current_date += timedelta(days=1)
+    selected_start_date = st.sidebar.multiselect("Select Dates", dates_list,default=['02/12/2023','04/12/2023','10/12/2023','15/12/2023','16/12/2023','17/12/2023','19/12/2023','20/12/2023','21/12/2023','25/12/2023'])
+
+    if selected_start_date:
+        df = pd.read_csv('10000_Movements.csv', sep=",").dropna(subset=['latitude', 'longitude'])
+        df['datetimestamp'] = pd.to_datetime(df['datetimestamp'])
+        df = df[df['datetimestamp'].dt.strftime('%d/%m/%Y').isin(selected_start_date)]
+        # Use df for further processing or visualization
+    else:
+        st.write("Please select at least one date.")
+else:
+    selected_start_date = st.sidebar.date_input("Select Start Date", start_date)
+    selected_end_date = st.sidebar.date_input("Select End Date", end_date)
+
+    selected_start_date = pd.to_datetime(selected_start_date)
+    selected_end_date = pd.to_datetime(selected_end_date)
+    df = pd.read_csv('10000_Movements.csv', sep=",").dropna(subset=['latitude', 'longitude'])
+    df['datetimestamp'] = pd.to_datetime(df['datetimestamp'])
+    df = df[(df['datetimestamp'] >= selected_start_date) & (df['datetimestamp'] <= selected_end_date)]
 
 
 # Define the HTML content with icons and labels
@@ -343,15 +374,21 @@ if options == 'Search by Radius':
     dist = st.radio("Select Distance Unit", ["Meters","Kilometers"],horizontal=True)
 
     # # Convert date inputs to datetime objects
-    selected_start_date = pd.to_datetime(selected_start_date)
-    selected_end_date = pd.to_datetime(selected_end_date)
+    # selected_start_date = pd.to_datetime(selected_start_date)
+    # selected_end_date = pd.to_datetime(selected_end_date)
+# 
+    # if date_option == "mutiple Dates":
+    #     df = pd.read_csv('10000_Movements.csv', sep=",").dropna(subset=['latitude', 'longitude'])
+    #     df['datetimestamp'] = pd.to_datetime(df['datetimestamp'])
+    #     df = df[df['datetimestamp'].dt.strftime('%d/%m/%Y').isin(selected_start_date)]
+    #     st.write(selected_start_date)
+    #     st.write(df)
 
     @st.cache_data
-    def load(selected_start_date,selected_end_date):
-        df = pd.read_csv('10000_Movements.csv', sep=",").dropna(subset=['latitude', 'longitude'])
-        df['datetimestamp'] = pd.to_datetime(df['datetimestamp'])
-
-        df = df[(df['datetimestamp'] >= selected_start_date) & (df['datetimestamp'] <= selected_end_date)]
+    def load(df):
+        # df = pd.read_csv('10000_Movements.csv', sep=",").dropna(subset=['latitude', 'longitude'])
+        # df['datetimestamp'] = pd.to_datetime(df['datetimestamp'])
+        # df = df[(df['datetimestamp'] >= selected_start_date) & (df['datetimestamp'] <= selected_end_date)]
         df['year'] = df['datetimestamp'].dt.year
         df['month'] = df['datetimestamp'].dt.month
         df['day'] = df['datetimestamp'].dt.day
@@ -360,7 +397,7 @@ if options == 'Search by Radius':
 
         return df
 
-    df=load(selected_start_date,selected_end_date)
+    df=load(df)
     # st.button("Rerun")
 
     day_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -381,7 +418,7 @@ if options == 'Search by Radius':
     df['day_type'] = df['day_of_week'].apply(map_day_type)
 
 
-    st.sidebar.markdown(f"<font color='orange'><b>Number of records within Date Range: {len(df)}</b></font>", unsafe_allow_html=True)
+    st.sidebar.markdown(f"<font color='orange'><b>Number of records within Selected Date : {len(df)}</b></font>", unsafe_allow_html=True)
 
 
     st.sidebar.write("----------------")
@@ -499,6 +536,8 @@ if options == 'Search by Radius':
             same_values_count = filtered_df[(filtered_df['homegeohash9'] == filtered_df['workgeohash'])].shape[0]
             if same_values_count>0:
                 filtered_df_workgeo_unique_count=filtered_df_workgeo_unique_count-same_values_count
+        
+        freq_Day=frequency(filtered_df)
 
         col1,col2=st.columns((0.6,0.3))
 
@@ -508,11 +547,15 @@ if options == 'Search by Radius':
                 st.text(f"Total No of devices from Home within {radius_input}{unit} radius: {filtered_df_homegeo_unique_count}")
                 st.text(f"Total No of devices from WorkPlace {radius_input}{unit} radius: {filtered_df_workgeo_unique_count}")
                 st.text(f"Total No of devices both Home and Workplace within {radius_input}{unit} radius: {filtered_df_workgeo_and_home_unique_count}")
+                st.text(f"Total No of devices visited more than once in selected location: {len(freq_Day)}")
+
             else:
                 st.text(f"Total number of Unique devices within {radius_m}{unit} radius: {filtered_df_maid_unique_count}")
                 st.text(f"Total No of devices from Home within {radius_m}{unit} radius: {filtered_df_homegeo_unique_count}")
                 st.text(f"Total No of devices from Workplace {radius_m}{unit} radius: {filtered_df_workgeo_unique_count}")
                 st.text(f"Total No of devices both Home and Workplace within {radius_m}{unit} radius: {filtered_df_workgeo_and_home_unique_count}")
+                st.text(f"Total No of devices visited more than once in selected location: {len(freq_Day)}")
+
         # with col2:
         #     with st.expander('About', expanded=True):
         #             if dist == 'Meters':
@@ -539,8 +582,8 @@ if options == 'Search by Radius':
                 - :blue[**All Devices**]
                 - :orange[**Home Locations**]
                 - :green[**Work Locations**]
-                - This all points are representing {}{} radius from {} to {}
-                """.format(radius_input,unit,selected_start_date.strftime('%Y-%m-%d'),selected_end_date.strftime('%Y-%m-%d')))
+                - This all points are representing {}{} 
+                """.format(radius_input,unit))
         
         # filtered_df_hr=filtered_df[['datetimestamp']].copy()
         # filtered_df_hr['hour'] = filtered_df_hr['datetimestamp'].dt.hour
@@ -627,14 +670,44 @@ if options == 'Search by Radius':
         st.warning("Please enter both latitude and longitude values.")
 
 else:
-    selected_start_date = pd.to_datetime(selected_start_date)
-    selected_end_date = pd.to_datetime(selected_end_date)
+    # selected_start_date = pd.to_datetime(selected_start_date)
+    # selected_end_date = pd.to_datetime(selected_end_date)
 
-    df = pd.read_csv('10000_Movements.csv', sep=",").dropna(subset=['latitude', 'longitude'])
-    df['datetimestamp'] = pd.to_datetime(df['datetimestamp'])
+    # df = pd.read_csv('10000_Movements.csv', sep=",").dropna(subset=['latitude', 'longitude'])
+    # df['datetimestamp'] = pd.to_datetime(df['datetimestamp'])
 
-    df = df[(df['datetimestamp'] >= selected_start_date) & (df['datetimestamp'] <= selected_end_date)]
-    st.sidebar.markdown(f"<font color='orange'><b>Number of records within Date Range: {len(df)}</b></font>", unsafe_allow_html=True)
+    # df = df[(df['datetimestamp'] >= selected_start_date) & (df['datetimestamp'] <= selected_end_date)]
+
+    if date_option == "mutiple Dates":
+        start_date = datetime.strptime('01/12/2023', '%d/%m/%Y')
+        end_date = datetime.strptime('31/12/2023', '%d/%m/%Y')
+        dates_list = []
+        current_date = start_date
+        while current_date <= end_date:
+            dates_list.append(current_date.strftime('%d/%m/%Y'))
+            current_date += timedelta(days=1)
+        # selected_start_date = st.sidebar.multiselect("Select Dates1", dates_list,default=['02/12/2023','04/12/2023','10/12/2023','15/12/2023','16/12/2023','17/12/2023','19/12/2023','20/12/2023','21/12/2023','25/12/2023'])
+
+        if selected_start_date:
+            df = pd.read_csv('10000_Movements.csv', sep=",").dropna(subset=['latitude', 'longitude'])
+            df['datetimestamp'] = pd.to_datetime(df['datetimestamp'])
+            df = df[df['datetimestamp'].dt.strftime('%d/%m/%Y').isin(selected_start_date)]
+            # Use df for further processing or visualization
+        else:
+            st.write("Please select at least one date.")
+    else:
+        # selected_start_date = st.sidebar.date_input("Select Start Date", start_date)
+        # selected_end_date = st.sidebar.date_input("Select End Date", end_date)
+
+        selected_start_date = pd.to_datetime(selected_start_date)
+        selected_end_date = pd.to_datetime(selected_end_date)
+        df = pd.read_csv('10000_Movements.csv', sep=",").dropna(subset=['latitude', 'longitude'])
+        df['datetimestamp'] = pd.to_datetime(df['datetimestamp'])
+        df = df[(df['datetimestamp'] >= selected_start_date) & (df['datetimestamp'] <= selected_end_date)]
+
+
+    
+    st.sidebar.markdown(f"<font color='orange'><b>Number of records within Selected Dates : {len(df)}</b></font>", unsafe_allow_html=True)
 
     df['year'] = df['datetimestamp'].dt.year
     df['month'] = df['datetimestamp'].dt.month
@@ -731,13 +804,14 @@ else:
                 return 1
 
         filtered_df=pd.DataFrame(matching_records,columns=['maid','latitude','longitude'])
+        inside_polygon_latitude=filtered_df.latitude.tolist()
         filtered_df = pd.merge(filtered_df, df[['maid','latitude','longitude','datetimestamp','workgeohash','homegeohash9','Age_Range','year','month','day','day_of_week','hour','Gender','day_name']], on=['maid','latitude','longitude'], how='inner')
         filtered_df_maid_unique_count = filtered_df['maid'].nunique()
 
         counts_inside_polygon=sum(list(maid_counts.values()))
         unique_count_inside_polygon=len(list(maid_counts.keys()))
-        st.text(f"Number of all devices within Polygon: {counts_inside_polygon}")
-        st.text(f"Number of all unique devices within Polygon {unique_count_inside_polygon}")
+        st.text(f"Number of all devices within Boundary: {counts_inside_polygon}")
+        st.text(f"Number of all unique devices within Boundary: {unique_count_inside_polygon}")
 
         if counts_inside_polygon ==0:
             filtered_df_homegeo_unique_count=0
@@ -784,9 +858,14 @@ else:
         if same_values_count>0:
             filtered_df_workgeo_unique_count=filtered_df_workgeo_unique_count-same_values_count
 
-        st.text(f"Total No of devices from Home within Polygon: {filtered_df_homegeo_unique_count}")
-        st.text(f"Total No of devices from WorkPlace within Polygon: {filtered_df_workgeo_unique_count}")
-        st.text(f"No of devices both Home and WorkPlace within Polygon: {filtered_df_workgeo_and_home_unique_count}")
+        freq_Day=frequency(filtered_df)
+        
+        
+        st.text(f"Total No of devices from Home within Boundary: {filtered_df_homegeo_unique_count}")
+        st.text(f"Total No of devices from WorkPlace within Boundary: {filtered_df_workgeo_unique_count}")
+        st.text(f"No of devices both Home and WorkPlace within Boundary: {filtered_df_workgeo_and_home_unique_count}")
+        st.text(f"Total No of devices visited more than once in selected location: {len(freq_Day)}")
+
         # sum_of_true = same_values_count.get(True, 0)
         # if sum_of_true == 0:
         #     st.write(same_values_count)
@@ -801,25 +880,33 @@ else:
                 st.write("""
                 - :blue[**All Devices**]
                 - :orange[**Home Locations**]
-                - :green[**Work Locations**]
-                - This all points are representing from {} to {}
-                """.format(selected_start_date.strftime('%Y-%m-%d'),selected_end_date.strftime('%Y-%m-%d')))
+                - :green[**Work Locations**]""")
+                # - This all points are representing from {} to {}
+                # """.format(selected_start_date.strftime('%Y-%m-%d'),selected_end_date.strftime('%Y-%m-%d')))
 
         # diagrams(filtered_df)
         if len(filtered_df) ==0:
             pass
         else:
             lon_lat=more_insights(filtered_df,center_lat,center_lon)
-            # st.write(lon_lat)
+            lon_lat['flag'] = lon_lat['latitude_x'].isin(inside_polygon_latitude)
+            lon_lat['flag'] = lon_lat['flag'].map({True: 'inside', False: 'outside'})
 
             center_lat = total_lat / num_vertices
             center_lon = total_lon / num_vertices
             m = folium.Map(location=[center_lat, center_lon], zoom_start=17)
             polygon_shapely = Polygon(polygon_coordinates)
-            for lat, lon in zip(lon_lat['latitude_x'], lon_lat['longitude_x']):
-                color = 'brown'
-                folium.CircleMarker(location=[lat, lon], radius=2, color=color, fill=True, fill_color=color,
-                                    fill_opacity=1).add_to(m)
+            for lat, lon,flag in zip(lon_lat['latitude_x'], lon_lat['longitude_x'],lon_lat['flag']):
+                if flag == 'inside':
+                    color = 'brown'
+                    folium.CircleMarker(location=[lat, lon], radius=2, color=color, fill=True, fill_color=color,
+                                        fill_opacity=1).add_to(m)
+                else:
+                    color='blue'
+                    folium.CircleMarker(location=[lat, lon], radius=2, color=color, fill=True, fill_color=color,
+                                        fill_opacity=1).add_to(m)
+
+
             folium.Polygon(locations=polygon_coordinates, color='green', fill=True, fill_color='green', fill_opacity=0.4).add_to(m)
             col1,col2=st.columns((0.6,0.3))
             with col1:

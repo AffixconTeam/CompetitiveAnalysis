@@ -73,14 +73,24 @@ def PCA_plot(visitors_data_all,non_visitors_data):
     combined_data=combined_data.drop('maid',axis=1)
     pca = PCA(n_components=2)
     pca_result = pca.fit_transform(combined_data)
-    pca_df = pd.DataFrame(data=pca_result, columns=['PC1', 'PC2'])
-    labels = ['Visitors'] * len(visitors_data_all) + ['Non-Visitors'] * len(non_visitors_data)
+    pca_df = pd.DataFrame(data=pca_result, columns=['PC1', 'PC2']).set_index(combined_data.index)
+    labels = ['Visited selected location'] * len(visitors_data_all) + ['Population'] * len(non_visitors_data)
     pca_df['Label'] = labels
 
     # Plot the 2D scatter plot with specified colors for visitors and non-visitors
     fig = px.scatter(pca_df, x='PC1', y='PC2', color='Label', title='2D Scatter Plot with PCA', 
-                    color_discrete_map={'Visitors': 'blue', 'Non-Visitors': 'red'}, opacity=1)
-    st.plotly_chart(fig)
+                    color_discrete_map={'Visited selected location': 'blue', 'Population': 'red'}, opacity=1,labels={"Visitors": "Visited selected location", "Non-Visitors": "Population"})
+
+    col1,col2=st.columns((0.6,0.3))
+    with col1:
+        st.plotly_chart(fig)
+    with col2:
+        with st.expander('About', expanded=True):
+            st.write("""
+                :orange[**The lookalike model uses behavioral data from home and work locations to identify similar customers. This data is visualized in a 2D scatter plot, with customers represented as points. 
+                     By analyzing proximity in the plot, 
+                     the model predicts potential customers with similar behaviors using nearest neighbor search.**]""")
+    
 
 def find_lookalike_audience(visitors_data, non_visitors_data):
     visitors_data=visitors_data.drop('maid',axis=1)
@@ -90,7 +100,7 @@ def find_lookalike_audience(visitors_data, non_visitors_data):
     lookalike_audience = visitors_data.iloc[nearest_neighbors_indices]
     lookalike_distances = distances.flatten()
     lookalike_audience['Distance'] = lookalike_distances
-    return lookalike_audience
+    return lookalike_audience,nearest_neighbors_indices
 
 start_date = pd.Timestamp('2023-12-01')
 end_date = pd.Timestamp('2023-12-31')
@@ -154,6 +164,8 @@ if options == 'Search by Radius':
     st.markdown('<p style="color: red;">Select Area for Lookalike</p>', unsafe_allow_html=True)
     lookalike_radius = st.slider("Select radius (in kilometers):", min_value=1, max_value=100, value=2)
     non_visitors_data = df[df.apply(lambda row: haversine(user_lat, user_lon, row['latitude'], row['longitude']) <= lookalike_radius, axis=1)]
+    st.markdown(f"<font color='orange'><b>Total Count inside Population: {len(non_visitors_data)}</b></font>", unsafe_allow_html=True)
+
     non_visitors_data= non_visitors_data[~non_visitors_data['maid'].isin(visitors_data_all['maid'])]
     non_visitors_data[['Home_latitude', 'Home_longitude']] = non_visitors_data['homegeohash9'].apply(decode_geohash)
     non_visitors_data[['Work_latitude', 'Work_longitude']] = non_visitors_data['workgeohash'].apply(decode_geohash)
@@ -162,9 +174,13 @@ if options == 'Search by Radius':
     non_visitors_data=non_visitors_data[["latitude","longitude","Home_latitude","Home_longitude","Work_latitude","Work_longitude","Home_Distance","Work_Distance"]]
     non_visitors_data = non_visitors_data.astype({col: float for col in non_visitors_data.columns})
     PCA_plot(visitors_data_all,non_visitors_data)
-    lookalike_audience = find_lookalike_audience(visitors_data_all, non_visitors_data)
+    lookalike_audience,nearest_neighbors_indices = find_lookalike_audience(visitors_data_all, non_visitors_data)
     lookalike_audience=lookalike_audience.sort_values('Distance')
     lookalike_audience=lookalike_audience[lookalike_audience['Distance']<int(len(lookalike_audience)*0.1)]
+
+    combined_data1 = pd.concat([visitors_data_all, non_visitors_data])
+
+    # st.write(combined_data1.iloc[nearest_neighbors_indices])
 
 
 else:
@@ -243,6 +259,8 @@ else:
     st.markdown('<p style="color: red;">Select Area for Lookalike</p>', unsafe_allow_html=True)
     lookalike_radius = st.slider("Select radius (in kilometers):", min_value=1, max_value=100, value=2)
     non_visitors_data = df[df.apply(lambda row: haversine(center_lat, center_lon, row['latitude'], row['longitude']) <= lookalike_radius, axis=1)]
+    st.markdown(f"<font color='orange'><b>Total Count inside Population: {len(non_visitors_data)}</b></font>", unsafe_allow_html=True)
+
     non_visitors_data= non_visitors_data[~non_visitors_data['maid'].isin(visitors_data_all['maid'])]
     non_visitors_data[['Home_latitude', 'Home_longitude']] = non_visitors_data['homegeohash9'].apply(decode_geohash)
     non_visitors_data[['Work_latitude', 'Work_longitude']] = non_visitors_data['workgeohash'].apply(decode_geohash)
