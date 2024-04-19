@@ -366,7 +366,7 @@ st.markdown("""
     </style>
 """,unsafe_allow_html=True)
 
-options = ["Search by Radius", "Search by Polygon"]
+options = ["Search by Polygon","Search by Radius"]
 
 options=st.radio("Select Search Option", options=options, horizontal=True)
 
