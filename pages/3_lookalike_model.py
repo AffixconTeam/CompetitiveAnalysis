@@ -87,10 +87,10 @@ def PCA_plot(visitors_data_all,non_visitors_data):
     with col2:
         with st.expander('About', expanded=True):
             st.write("""
-                -:orange[**The lookalike model uses behavioral data from home and work locations to identify similar customers. This data is visualized in a 2D scatter plot, with customers represented as points. 
+                - :orange[**The lookalike model uses behavioral data from home and work locations to identify similar customers. This data is visualized in a 2D scatter plot, with customers represented as points. 
                      By analyzing proximity in the plot, 
                      the model predicts potential customers with similar behaviors using nearest neighbor search.**]
-                -:orange[**columns used for this analysis are Home,Work location distances and Longitude,Latitude of all other Places visited**]
+                - :orange[**columns used for this analysis are Home,Work location distances and Longitude,Latitude of all other Places visited**]
                      """)
     
 
