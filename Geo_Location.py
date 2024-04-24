@@ -247,8 +247,12 @@ def more_insights(count_within_radius_df,user_lat,user_lon):
     with col2:
         with st.expander('About', expanded=True):
             st.write("""
-                :orange[**The provided heatmap visualization
-                    represents the visitation patterns throughout the week across different hours of the day.**]""")
+                - :orange[**The provided heatmap visualization
+                    represents the visitation patterns throughout the week across different hours of the day.**]
+                - :orange[**Spot Peak Hours: Easily see the busiest times each day.**]
+                - :orange[**Weekly Trends: Understand how visits change throughout the week.**]
+                - :orange[**Hourly Breakdown: Know when customers are most active during the day.**]
+                - :orange[**Day-to-Day Changes: Notice differences between weekdays and weekends.**]""")
 
 
 
@@ -886,11 +890,11 @@ else:
         with col2:
             with st.expander('About', expanded=True):
                 st.write("""
-                - :blue[**All Devices**]
-                - :orange[**Home Locations**]
-                - :green[**Work Locations**]""")
-                # - This all points are representing from {} to {}
-                # """.format(selected_start_date.strftime('%Y-%m-%d'),selected_end_date.strftime('%Y-%m-%d')))
+                - :blue[**All Devices - {}**]
+                - :orange[**Home Locations - {}**]
+                - :green[**Work Locations - {}**]
+                - This polygon is represent as people who visited selected area within selected date range
+                """.format(unique_count_inside_polygon,filtered_df_homegeo_unique_count,filtered_df_workgeo_unique_count))
 
         # diagrams(filtered_df)
         if len(filtered_df) ==0:

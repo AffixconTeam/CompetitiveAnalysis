@@ -74,25 +74,37 @@ def PCA_plot(visitors_data_all,non_visitors_data):
     pca = PCA(n_components=2)
     pca_result = pca.fit_transform(combined_data)
     pca_df = pd.DataFrame(data=pca_result, columns=['PC1', 'PC2']).set_index(combined_data.index)
-    labels = ['Visited selected location - Dan Murphy'] * len(visitors_data_all) + ['Population 3km'] * len(non_visitors_data)
+    labels = ['Visited selected location - Dan Murphy'] * len(visitors_data_all) + ['Population 2km'] * len(non_visitors_data)
     pca_df['Label'] = labels
 
     # Plot the 2D scatter plot with specified colors for visitors and non-visitors
     fig = px.scatter(pca_df, x='PC1', y='PC2', color='Label', title='2D Scatter Plot with PCA', 
-                    color_discrete_map={'Visited selected location - Dan Murphy': 'blue', 'Population 3km': 'red'}, opacity=1,labels={"Visitors": "Visited selected location - Dan Murphy", "Non-Visitors": "Population 3km"})
+                    color_discrete_map={'Visited selected location - Dan Murphy': 'blue', 'Population 2km': 'red'}, opacity=1,labels={"Visitors": "Visited selected location - Dan Murphy", "Non-Visitors": "Population 2km"})
 
     col1,col2=st.columns((0.6,0.3))
     with col1:
         st.plotly_chart(fig)
     with col2:
         with st.expander('About', expanded=True):
+            # st.write("""
+            #     - :orange[**The lookalike model uses behavioral data from home and work locations to identify similar customers. This data is visualized in a 2D scatter plot, with customers represented as points. 
+            #          By analyzing proximity in the plot, 
+            #          the model predicts potential customers with similar behaviors using nearest neighbor search.**]
+            #     - :orange[**columns used for this analysis are Home,Work location distances and Longitude,Latitude of all other Places visited**]
+            #          """)
             st.write("""
-                - :orange[**The lookalike model uses behavioral data from home and work locations to identify similar customers. This data is visualized in a 2D scatter plot, with customers represented as points. 
-                     By analyzing proximity in the plot, 
-                     the model predicts potential customers with similar behaviors using nearest neighbor search.**]
-                - :orange[**columns used for this analysis are Home,Work location distances and Longitude,Latitude of all other Places visited**]
-                     """)
-    
+                - :orange[**This scatter plot visualizes data from a nearest neighbor search using PCA (Principal Component Analysis).**]
+                - :green[**Columns used for this model: Longitude, Latitude of other visiting locations & Home,Work Locations and Distances.**]
+                1. PC1: Represents one of the transformed dimensions resulting from PCA.
+                2. PC2: Represents another transformed dimension resulting from PCA.
+
+                Each point on the plot corresponds to a data point, and its position is determined by its PC1 and PC2 values.
+
+                - :blue[**Blue Points: Represent visits to the selected location, specifically Dan Murphy.**]
+                - :red[**Red Points: Represent the population within a 2km radius of each location.**]
+
+                :orange[**This visualization helps understand the spatial distribution of user visits and the population density around those locations, providing insights into user behavior and the surrounding areas.**]
+                                    """)
 
 def find_lookalike_audience(visitors_data, non_visitors_data):
     visitors_data=visitors_data.drop('maid',axis=1)
@@ -280,7 +292,6 @@ else:
 
     # prediction_lookalike=df[~df['maid'].isin(visitors_data_inplace['maid'])]['maid']
     # non_visitors_data.iloc[lookalike_audience.index]
-
 
 st.write('Lookalike Audience',df.iloc[lookalike_audience.index]['maid'].unique()[:5])
 st.markdown(f"<font color='orange'><b>Lookalike Audience Unique Count: {df.iloc[lookalike_audience.index]['maid'].nunique()}</b></font>", unsafe_allow_html=True)
