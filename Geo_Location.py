@@ -30,7 +30,8 @@ st.write(custom_css, unsafe_allow_html=True)
 st.markdown(custom_css, unsafe_allow_html=True)
 
 st.title("🎯Location Insights")
-st.markdown(':green[**These all points are representing based on all device Mobile Advertisement Ids in people movement table**]')
+st.markdown(':green[**idetify the people profile based on custom boundaries in the Map**]')
+st.markdown(':green[**These all points are representing based on all device Mobile Advertisement Ids (MAID) in people movement table**]')
 
 
 # Function to calculate Haversine distance between two coordinates
@@ -184,8 +185,10 @@ def more_insights(count_within_radius_df,user_lat,user_lon):
     with col2:
         with st.expander('About', expanded=True):
             st.write("""
-                :orange[**The chart provides a visual representation of the daily pattern of occurrences, 
-                     highlighting any trends or fluctuations in the data over the course of the month.**]""")
+                - :orange[**The chart provides a visual representation of the daily pattern of occurrences, 
+                     highlighting any trends or fluctuations in the data over the course of the month.**]
+                - :orange[**benefits:- we can identify most people visited date and which date would be the promotion date**]
+                     """)
 
     col1,col2=st.columns((0.6,0.3))
 
@@ -194,8 +197,10 @@ def more_insights(count_within_radius_df,user_lat,user_lon):
     with col2:
         with st.expander('About', expanded=True):
             st.write("""
-                :orange[**The chart provides a visual representation of the hourly pattern of occurrences, 
-                     highlighting any trends or fluctuations throughout the day.**]""")
+                - :orange[**The chart provides a visual representation of the hourly pattern of occurrences, 
+                     highlighting any trends or fluctuations throughout the day.**]
+                - :orange[**benefits:- we can identify most people visited hour and peek hour**]
+                     """)
 
     col1,col2=st.columns((0.6,0.3))
 
@@ -204,8 +209,11 @@ def more_insights(count_within_radius_df,user_lat,user_lon):
     with col2:
         with st.expander('About', expanded=True):
             st.write("""
-                :orange[**The chart provides a visual representation of the day wise pattern of occurrences, 
-                     highlighting any trends or fluctuations throughout the week.**]""")
+                - :orange[**The chart provides a visual representation of the day wise pattern of occurrences, 
+                     highlighting any trends or fluctuations throughout the week.**]
+                - :orange[**benefits:- we can identify variations between day and weekday patterns throughout the seelcted date range**]
+                     """)     
+
 
 
 

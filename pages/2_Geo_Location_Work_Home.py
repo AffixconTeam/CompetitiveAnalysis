@@ -156,6 +156,7 @@ def main():
                 - :green[**Work Locations - {}**]
                 - No of devices that both home and work within radius - {}
                 - This all points are representing within {}{} 
+                - Benifits:- This can help to send Email, SMS selected area
                 """.format(filtered_df_home_geo_unique_count,filtered_df_workgeo_unique_count,common_items,radius_input,'km'))
 
         # st.write(filtered_df_workgeo_unique_count)

@@ -74,12 +74,12 @@ def PCA_plot(visitors_data_all,non_visitors_data):
     pca = PCA(n_components=2)
     pca_result = pca.fit_transform(combined_data)
     pca_df = pd.DataFrame(data=pca_result, columns=['PC1', 'PC2']).set_index(combined_data.index)
-    labels = ['Visited selected location'] * len(visitors_data_all) + ['Population'] * len(non_visitors_data)
+    labels = ['Visited selected location - Dan Murphy'] * len(visitors_data_all) + ['Population 3km'] * len(non_visitors_data)
     pca_df['Label'] = labels
 
     # Plot the 2D scatter plot with specified colors for visitors and non-visitors
     fig = px.scatter(pca_df, x='PC1', y='PC2', color='Label', title='2D Scatter Plot with PCA', 
-                    color_discrete_map={'Visited selected location': 'blue', 'Population': 'red'}, opacity=1,labels={"Visitors": "Visited selected location", "Non-Visitors": "Population"})
+                    color_discrete_map={'Visited selected location - Dan Murphy': 'blue', 'Population 3km': 'red'}, opacity=1,labels={"Visitors": "Visited selected location - Dan Murphy", "Non-Visitors": "Population 3km"})
 
     col1,col2=st.columns((0.6,0.3))
     with col1:
@@ -280,8 +280,8 @@ else:
     # non_visitors_data.iloc[lookalike_audience.index]
 
 
-st.write('Lookalike Audience',df.iloc[lookalike_audience.index]['maid'].head())
-st.markdown(f"<font color='orange'><b>Lookalike Audience Count: {len(lookalike_audience)}</b></font>", unsafe_allow_html=True)
+st.write('Lookalike Audience',df.iloc[lookalike_audience.index]['maid'].unique()[:5])
+st.markdown(f"<font color='orange'><b>Lookalike Audience Unique Count: {df.iloc[lookalike_audience.index]['maid'].nunique()}</b></font>", unsafe_allow_html=True)
 
 
 

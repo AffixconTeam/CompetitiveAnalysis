@@ -172,7 +172,8 @@ if  no_of_locations:
         # Append the location identifier to the location data
         location_data.append(location_identifier)
         user_coordinates.append(location_data)
-    st.write(':orange[**User Specific Location**]')
+    
+    st.write(':orange[**User Location**]')
     location_data = []
 
     row = st.columns(4)
@@ -272,13 +273,12 @@ if  no_of_locations:
         unique_maid = filtered_df['maid'].unique()
         items[f'loc{idx + 1}'] = unique_maid
 
-    # st.write(filtered_coordinates.values())
         
-    count_within_radius_df = pd.DataFrame(list(count_within_radius.items()), columns=['coordinates', 'Total_record_counts'])
-    unique_maid_within_radius_df = pd.DataFrame(list(unique_maid_counts.items()), columns=['coordinates4', 'Total_unique_maid_counts'])
-    home_counts_df = pd.DataFrame(list(unique_home_counts.items()), columns=['coordinates2', 'Unique_home_counts'])
+    count_within_radius_df = pd.DataFrame(list(count_within_radius.items()), columns=['coordinates', 'Total_visit_counts'])
+    unique_maid_within_radius_df = pd.DataFrame(list(unique_maid_counts.items()), columns=['coordinates4', 'Unique_visits_each_location'])
+    home_counts_df = pd.DataFrame(list(unique_home_counts.items()), columns=['coordinates2', 'Unique_home_visit_counts'])
     # work_counts_df = pd.DataFrame(list(work_counts.items()), columns=['coordinates3', 'work_counts'])
-    work_counts_df = pd.DataFrame(list(unique_work_counts.items()), columns=['coordinates3', 'Unique_work_counts'])
+    work_counts_df = pd.DataFrame(list(unique_work_counts.items()), columns=['coordinates3', 'Unique_work_visit_counts'])
 
     loc=pd.DataFrame(item for item in items.keys() if item !='user_loc')
     count_df = pd.concat([loc,count_within_radius_df, unique_maid_within_radius_df,home_counts_df, work_counts_df], axis=1).drop(columns=['coordinates2','coordinates3','coordinates4']).rename(columns={0: 'Locations'})
@@ -300,7 +300,6 @@ if  no_of_locations:
         unique_records_per_location[location] = [item for item in records if location_counter[item] == 1 and all_items_counter[item] == 1]
         # unique_records_per_location[location] = [item for item in records ]
 
-
     locations_list = []
     common_items_list = []
     item_count_list = []
@@ -313,14 +312,16 @@ if  no_of_locations:
     df_common_items_counts = pd.DataFrame({
         'Locations': locations_list,
         'Unique Items': common_items_list,
-        'only selected location visited': item_count_list
+        'Visites only single location': item_count_list
     })
 
+    loc={"loc1":'Royal Botanic Garden', 'loc2':'Accor Stadium','loc3':'Sydney Opera House','loc4':'Central Station','loc5':'Monash University'}
     # df_common_items_counts=df_common_items_counts[df_common_items_counts['Count']>0]
     # df_common_items_counts=df_common_items_counts
     df_common_items_counts = count_df.merge(df_common_items_counts,on='Locations',how='inner').drop(columns=['Unique Items'])
 
-    # Display the DataFrame
+    df_common_items_counts['Locations'] = df_common_items_counts['Locations'].replace(loc)
+
     st.write(':orange[**Unique records for each competitor location**]',df_common_items_counts)
 
     #-----------------------------------------------------------
@@ -389,6 +390,15 @@ if  no_of_locations:
     df_common_items_counts = df_common_items_counts[df_common_items_counts['Locations'].str.contains('user_loc')]
     df_common_items_counts = df_common_items_counts[df_common_items_counts['Locations'].apply(lambda x: len(x.split(', '))) == 2]
 
+    def replace_loc(location):
+        loc_key = location.split(',')[0]  # Extract the loc part
+        if loc_key in loc:
+            return loc[loc_key] + ',user_loc'  # Combine with user_loc
+        else:
+            return location  # If not found in the mapping, return unchanged
+
+    # Apply the function to the "Locations" column
+    df_common_items_counts['Locations'] = df_common_items_counts['Locations'].apply(replace_loc)
     # Display the DataFrame
     st.write('Common records for multiple locations',df_common_items_counts[['Locations','Device count Visited Both Locations']])
 
