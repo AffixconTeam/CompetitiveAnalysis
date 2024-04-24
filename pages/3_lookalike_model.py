@@ -182,7 +182,7 @@ if options == 'Search by Radius':
 
     combined_data1 = pd.concat([visitors_data_all, non_visitors_data])
 
-    st.write(combined_data1)
+    # st.write(combined_data1)
 
 
 else:
