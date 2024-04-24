@@ -393,7 +393,7 @@ if  no_of_locations:
     def replace_loc(location):
         loc_key = location.split(',')[0]  # Extract the loc part
         if loc_key in loc:
-            return loc[loc_key] + ',user_loc'  # Combine with user_loc
+            return loc[loc_key] + ',Dan Murphy'  # Combine with user_loc
         else:
             return location  # If not found in the mapping, return unchanged
 
