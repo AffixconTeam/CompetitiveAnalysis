@@ -111,6 +111,11 @@ def main():
     #     color = 'black'
     #     folium.CircleMarker(location=[lat, lon], radius=4, color=color, fill=True, fill_color=color,
     #                         fill_opacity=1).add_to(feature_group_home)
+
+    # for lat, lon in zip(df['latitude'], df['longitude']):
+    #     color = 'blue'
+    #     folium.CircleMarker(location=[lat, lon], radius=2, color=color, fill=True, fill_color=color,
+    #                         fill_opacity=1).add_to(m)
         
     for lat, lon in zip(df[df['Distance_To_Home (Km)']<=radius_input]['Home_latitude'], df[df['Distance_To_Home (Km)']<=radius_input]['Home_longitude']):
         color = 'Orange'
@@ -160,7 +165,24 @@ def main():
                 """.format(filtered_df_home_geo_unique_count,filtered_df_workgeo_unique_count,common_items,radius_input,'km'))
 
         # st.write(filtered_df_workgeo_unique_count)
-        
+    stats=pd.DataFrame({"Mailing":[12],"SMS":[8],"Telemarketing(Mob / Phn)":[11],"Mobile	Emailing":[16]}).T
+    # Age_Range=pd.DataFrame({"under 18":[13],"18-24":[4],"24-28":[5],"50-54":[6]}).T
+    # Gender=pd.DataFrame({"Male":[8],"Female":[12]}).T
+
+    stats.columns=['Count']
+    # Age_Range.columns=['Count']
+    # Gender.columns=['Count']
+    st.markdown(":orange[Stats Report]")
+    col1,col2,col3=st.columns((3))
+    # with col1:
+    with st.expander("Mobile-Email Stats"):
+        st.write(stats)
+    # with col2:
+    #     with st.expander("Age Range Stats"):
+    #         st.write(Age_Range)
+    # with col3:
+    #     with st.expander("Gender Stats"):
+    #         st.write(Gender)
         
 
 
