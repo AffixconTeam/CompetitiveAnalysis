@@ -939,10 +939,11 @@ else:
 
             stats=pd.DataFrame({"Mailing":[22],"SMS":[20],"Telemarketing(Mob / Phn)":[25],"Mobile	Emailing":[32]}).T
             stats.columns=['Count']
+            st.markdown(":orange[Stats Report]")
             col1,col2,col3=st.columns((3))
             with col1:
                 with st.expander("Mobile-Email Stats"):
-                    st.write(":orange[Stats Report]",stats)
+                    st.write(stats)
             with col2:
                 with st.expander("Age Range Stats"):
                     st.write(filtered_df.drop_duplicates('maid').value_counts('Age_Range'))
