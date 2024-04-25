@@ -674,9 +674,19 @@ if options == 'Search by Radius':
                 with st.expander('About',expanded=True):
                     st.write('This Map is plotting who visited the place and their other visiting points in seleted date range with user radius')
 
+            stats=pd.DataFrame({"Mailing":[22],"SMS":[20],"Telemarketing(Mob / Phn)":[25],"Mobile	Emailing":[32]}).T
+            stats.columns=['Count']
+            col1,col2,col3=st.columns((3))
+            with col1:
+                with st.expander("Mobile-Email Stats"):
+                    st.write(":orange[Stats Report]",stats)
+            with col2:
+                with st.expander("Age Range Stats"):
+                    st.write(filtered_df.drop_duplicates('maid').value_counts('Age_Range'))
+            with col3:
+                with st.expander("Gender Stats"):
+                    st.write(filtered_df.drop_duplicates('maid').value_counts('Gender'))
 
-            # else:
-            #     st.warning("No Records Founds")
 
     else:
         st.warning("Please enter both latitude and longitude values.")
@@ -927,10 +937,23 @@ else:
                 with st.expander('About',expanded=True):
                     st.write(':orange[**This Map is plotting who visited the place and their other visiting points in seleted date range with polygon**]')
 
-
-
+            stats=pd.DataFrame({"Mailing":[22],"SMS":[20],"Telemarketing(Mob / Phn)":[25],"Mobile	Emailing":[32]}).T
+            stats.columns=['Count']
+            col1,col2,col3=st.columns((3))
+            with col1:
+                with st.expander("Mobile-Email Stats"):
+                    st.write(":orange[Stats Report]",stats)
+            with col2:
+                with st.expander("Age Range Stats"):
+                    st.write(filtered_df.drop_duplicates('maid').value_counts('Age_Range'))
+            with col3:
+                with st.expander("Gender Stats"):
+                    st.write(filtered_df.drop_duplicates('maid').value_counts('Gender'))
 
     else:
         st.warning("Please Enter polygon points")
+
+
+
 
 
