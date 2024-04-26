@@ -91,22 +91,53 @@ industry_list=list(set(industry_list))
 # Determine the number of columns based on the length of industry_list
 niche_list=[]
 
+#---------------------------------------------------
 if len(industry_list)>0:
-    num_columns = len(industry_list)
-    st.write("Select Niche Market Industry")
-    # Create the columns dynamically
-    columns = st.columns(num_columns)
     selected_industries = []
-    for i, industry in enumerate(industry_list):
-        checkbox_industry_list = columns[i].checkbox(industry)
-        if checkbox_industry_list:
-            selected_code= df_seg.loc[df_seg['industry'] == str(industry), 'code'].values[0]
-            selected_industries.append(selected_code)
-            # st.write(selected_code)  
-    for code in selected_industries:
-        item_list_code = segment_industry_dict[code]
-        for item in item_list_code:
-            niche_list.append(item)
+
+    # Calculate the number of rows needed
+    num_rows = (len(industry_list) + 2) // 3
+
+    # Iterate over each row
+    for i in range(num_rows):
+        # Calculate the start and end index for the current row
+        start_index = i * 3
+        end_index = min(start_index + 3, len(industry_list))
+        
+        # Create a row for checkboxes
+        row = st.columns(3)
+        
+        # Iterate over each item in the current row and create checkboxes
+        for j, industry in enumerate(industry_list[start_index:end_index]):
+            # Add checkbox for the current industry to the row
+            checkbox_industry_list = row[j].checkbox(industry)
+            if checkbox_industry_list:
+                selected_code= df_seg.loc[df_seg['industry'] == str(industry), 'code'].values[0]
+                selected_industries.append(selected_code)
+ 
+        for code in selected_industries:
+            item_list_code = segment_industry_dict[code]
+            for item in item_list_code:
+                niche_list.append(item)
+
+
+#--------------------------------------------------
+# if len(industry_list)>0:
+#     num_columns = len(industry_list)
+#     st.write("Select Niche Market Industry")
+#     # Create the columns dynamically
+#     columns = st.columns(num_columns)
+#     selected_industries = []
+#     for i, industry in enumerate(industry_list):
+#         checkbox_industry_list = columns[i].checkbox(industry)
+#         if checkbox_industry_list:
+#             selected_code= df_seg.loc[df_seg['industry'] == str(industry), 'code'].values[0]
+#             selected_industries.append(selected_code)
+#             # st.write(selected_code)  
+#     for code in selected_industries:
+#         item_list_code = segment_industry_dict[code]
+#         for item in item_list_code:
+#             niche_list.append(item)
 
 else:
     pass

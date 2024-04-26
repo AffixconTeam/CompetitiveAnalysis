@@ -303,6 +303,7 @@ if  no_of_locations:
     locations_list = []
     common_items_list = []
     item_count_list = []
+
     # Print unique records for each location
     for location, unique_records in unique_records_per_location.items():
         locations_list.append(location)
