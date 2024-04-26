@@ -96,10 +96,10 @@ if len(industry_list)>0:
     selected_industries = []
 
     # Calculate the number of rows needed
-    num_rows = (len(industry_list) + 2) // 3
+    num_rows1 = (len(industry_list) + 2) // 3
 
     # Iterate over each row
-    for i in range(num_rows):
+    for i in range(num_rows1):
         # Calculate the start and end index for the current row
         start_index = i * 3
         end_index = min(start_index + 3, len(industry_list))
