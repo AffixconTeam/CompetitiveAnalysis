@@ -90,7 +90,7 @@ folium.Circle(
     radius=lookalike_radius*1000,
     color='green',
     fill=True,
-    fill_opacity=0.1,
+    fill_opacity=0.3,
     ).add_to(m)
 
 for _, row in df.iterrows():
@@ -232,6 +232,8 @@ scaled_weights = weights / sum_weights
 # Create a dictionary of location weights
 location_weights = {location: weight for location, weight in zip(location_data1, scaled_weights)}
 
+st.write("location weights",location_weights)
+
 result_df['Score'] = 0  # Initialize the Score column
 
 # Iterate over each location and its corresponding weight
@@ -249,4 +251,16 @@ with col1:
     folium_static(m)
 with col2:
     with st.expander("About",expanded=True):
-        st.write(':orange[**This lookalike module finds similar people who visits nearby similar places near the specified location(Dan Murphy). It calculates a score based on how close these places are to the specified location and how often they are visited and how many multiple locations they visits. It prioritizes places that are closer and frequently visited by people.**]')
+        st.write("""
+                :orange[**This lookalike module finds similar people who visits nearby similar places near the specified 
+                 location(Dan Murphy). It calculates a score based on how close these places are to the specified location and 
+                 how often they are visited and how many multiple locations they visits. It prioritizes places that are closer and frequently visited by people.**]
+
+                - :green[Identify the population within a 10km radius of the specified location (Dan Murphy's) whose residences 
+                 fall within this radius.]
+                - :green[Determine similar nearby places (such as pubs and bars) for the given location and represent them as polygons.]
+                - :green[Assign weights to prioritize each specified location based on its distance from Dan Murphy's. Locations closer to Dan Murphy's receive higher weights.]
+                - :green[Calculate the visitation frequency for each specified places.]
+                - :green[Combine all location visitations and calculate scores for each location based on the assigned weights.]
+                - :green[Sort the maids by their scores, with the highest score indicating the most probable lookalike audience.]
+                 """)
