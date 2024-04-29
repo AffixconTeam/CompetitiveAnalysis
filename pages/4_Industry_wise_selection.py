@@ -24,6 +24,7 @@ body {
 st.write(custom_css, unsafe_allow_html=True)
 st.markdown(custom_css, unsafe_allow_html=True)
 st.title("Data Selection")
+st.markdown(":green[**This page filters specific records based on user-selected industries and demographics. It allows users to refine their data analysis by narrowing down their focus to specific industry sectors and demographic characteristics.**]")
 df_seg=pd.read_csv('affixcon_segments.csv',encoding='latin-1').dropna(subset=['segment_name'])
 df_seg['code'] = df_seg['code'].astype(str)
 df_seg.category = df_seg.category.str.upper()

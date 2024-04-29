@@ -10,6 +10,10 @@ from shapely.geometry import Point, Polygon
 from sklearn.decomposition import PCA
 import plotly.express as px
 from sklearn.neighbors import NearestNeighbors
+import folium
+from streamlit_folium import folium_static
+from collections import Counter
+import numpy as np
 
 st.set_page_config(page_title='Lookalike',page_icon=':earth_asia:',layout='wide')
 custom_css = """
@@ -24,15 +28,22 @@ body {
 """
 st.write(custom_css, unsafe_allow_html=True)
 st.markdown(custom_css, unsafe_allow_html=True)
-st.markdown("""
-    <style>
-    .stRadio [role=radiogroup]{
-        align-items: center;
-        justify-content: center;
-    }
-    </style>
-""",unsafe_allow_html=True)
-st.title("Lookalike Model")
+st.title(":orange[**Lookalike Model**]")
+st.markdown(':green[**This page displays a lookalike model that identifies individuals who visit similar locations, indicating shared interests. It highlights people who frequent comparable places, suggesting common preferences and behaviors.**]')
+def decode_geohash(geohash):
+    if pd.notna(geohash):
+        try:
+            latitude, longitude = geohash2.decode(geohash)
+            return pd.Series({'Home_latitude': latitude, 'Home_longitude': longitude})
+        except ValueError:
+            # Handle invalid geohashes, you can modify this part based on your requirements
+            return pd.Series({'Home_latitude': None, 'Home_longitude': None})
+        except TypeError:
+            # Handle the case where geohash2.decode returns a single tuple
+            return pd.Series({'Home_latitude': geohash[0], 'Home_longitude': geohash[1]})
+    else:
+        # Handle null values
+        return pd.Series({'Home_latitude': None, 'Home_longitude': None})
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371  # Radius of the Earth in kilometers
@@ -52,254 +63,204 @@ def haversine(lat1, lon1, lat2, lon2):
     distance = R * c
     return distance
 
-def decode_geohash(geohash):
-    if pd.notna(geohash):
-        try:
-            latitude, longitude = geohash2.decode(geohash)
-            return pd.Series({'Home_latitude': latitude, 'Home_longitude': longitude})
-        except ValueError:
-            # Handle invalid geohashes, you can modify this part based on your requirements
-            return pd.Series({'Home_latitude': None, 'Home_longitude': None})
-        except TypeError:
-            # Handle the case where geohash2.decode returns a single tuple
-            return pd.Series({'Home_latitude': geohash[0], 'Home_longitude': geohash[1]})
-    else:
-        # Handle null values
-        return pd.Series({'Home_latitude': None, 'Home_longitude': None})
-    
-
-def PCA_plot(visitors_data_all,non_visitors_data):
-    combined_data = pd.concat([visitors_data_all, non_visitors_data])
-    combined_data=combined_data.drop('maid',axis=1)
-    pca = PCA(n_components=2)
-    pca_result = pca.fit_transform(combined_data)
-    pca_df = pd.DataFrame(data=pca_result, columns=['PC1', 'PC2']).set_index(combined_data.index)
-    labels = ['Visited selected location - Dan Murphy'] * len(visitors_data_all) + ['Population 2km'] * len(non_visitors_data)
-    pca_df['Label'] = labels
-
-    # Plot the 2D scatter plot with specified colors for visitors and non-visitors
-    fig = px.scatter(pca_df, x='PC1', y='PC2', color='Label', title='2D Scatter Plot with PCA', 
-                    color_discrete_map={'Visited selected location - Dan Murphy': 'blue', 'Population 2km': 'red'}, opacity=1,labels={"Visitors": "Visited selected location - Dan Murphy", "Non-Visitors": "Population 2km"})
-
-    col1,col2=st.columns((0.6,0.3))
-    with col1:
-        st.plotly_chart(fig)
-    with col2:
-        with st.expander('About', expanded=True):
-            # st.write("""
-            #     - :orange[**The lookalike model uses behavioral data from home and work locations to identify similar customers. This data is visualized in a 2D scatter plot, with customers represented as points. 
-            #          By analyzing proximity in the plot, 
-            #          the model predicts potential customers with similar behaviors using nearest neighbor search.**]
-            #     - :orange[**columns used for this analysis are Home,Work location distances and Longitude,Latitude of all other Places visited**]
-            #          """)
-            st.write("""
-                - :orange[**This scatter plot visualizes data from a nearest neighbor search using PCA (Principal Component Analysis).**]
-                - :green[**Columns used for this model: Longitude, Latitude of other visiting locations & Home,Work Locations and Distances.**]
-                1. PC1: Represents one of the transformed dimensions resulting from PCA.
-                2. PC2: Represents another transformed dimension resulting from PCA.
-
-                Each point on the plot corresponds to a data point, and its position is determined by its PC1 and PC2 values.
-
-                - :blue[**Blue Points: Represent visits to the selected location, specifically Dan Murphy.**]
-                - :red[**Red Points: Represent the population within a 2km radius of each location.**]
-
-                :orange[**This visualization helps understand the spatial distribution of user visits and the population density around those locations, providing insights into user behavior and the surrounding areas.**]
-                                    """)
-
-def find_lookalike_audience(visitors_data, non_visitors_data):
-    visitors_data=visitors_data.drop('maid',axis=1)
-    nbrs = NearestNeighbors(n_neighbors=1, algorithm='ball_tree').fit(visitors_data)
-    distances, indices = nbrs.kneighbors(non_visitors_data)
-    nearest_neighbors_indices = indices.flatten()
-    lookalike_audience = visitors_data.iloc[nearest_neighbors_indices]
-    lookalike_distances = distances.flatten()
-    lookalike_audience['Distance'] = lookalike_distances
-    return lookalike_audience,nearest_neighbors_indices
-
-start_date = pd.Timestamp('2023-12-01')
-end_date = pd.Timestamp('2023-12-31')
-
-st.sidebar.markdown('<p style="color: red;">Select Date Range</p>', unsafe_allow_html=True)
-
-# # Allow user to pick start and end dates
-selected_start_date = st.sidebar.date_input("Select Start Date", start_date)
-selected_end_date = st.sidebar.date_input("Select End Date", end_date)
-selected_start_date = pd.to_datetime(selected_start_date)
-selected_end_date = pd.to_datetime(selected_end_date)
-
-df = pd.read_csv('10000_Movements.csv', sep=",").dropna(subset=['latitude', 'longitude'])
-df['datetimestamp'] = pd.to_datetime(df['datetimestamp'])
-df = df[(df['datetimestamp'] >= selected_start_date) & (df['datetimestamp'] <= selected_end_date)]
-st.sidebar.markdown(f"<font color='orange'><b>Number of records within Date Range: {len(df)}</b></font>", unsafe_allow_html=True)
-
-st.sidebar.write("----------------")
-
-st.sidebar.markdown('<p style="color: red;">Select a Location</p>', unsafe_allow_html=True)
-# st.sidebar.text("Dan Murphy's Camberwell")
-
-placeholder = st.sidebar.empty()
 user_input_lat = st.sidebar.text_input("Enter a User latitude:", value="-37.82968153089708")
 user_input_lon = st.sidebar.text_input("Enter a User longitude :", value="145.05531534492368")
+lookalike_radius = st.slider("Select radius (in kilometers):", min_value=1, max_value=100, value=10)
+
+if user_input_lat and user_input_lon :
+    user_lat = float(user_input_lat)
+    user_lon = float(user_input_lon)
+    df = pd.read_csv('looklike_sample.csv', sep=",").dropna(subset=['latitude', 'longitude'])
+    df['datetimestamp'] = pd.to_datetime(df['datetimestamp'])
+    df[['Home_latitude', 'Home_longitude']] = df['homegeohash9'].apply(decode_geohash)
+    df[['Work_latitude', 'Work_longitude']] = df['workgeohash'].apply(decode_geohash)
+    df = df[df.apply(lambda row: haversine(user_lat, user_lon, float(row['Home_latitude']), float(row['Home_longitude'])) <= lookalike_radius, axis=1)]
+    # df['Home_Distance'] = df.apply(lambda row: haversine(user_lat, user_lon, float(row['Home_latitude']), float(row['Home_longitude'])), axis=1)
+    # df['Work_Distance'] = df.apply(lambda row: haversine(user_lat, user_lon, float(row['Work_latitude']), float(row['Work_longitude'])), axis=1)
+
+st.markdown(f"<font color='orange'><b>Total Count inside Population: {len(df)}</b></font>", unsafe_allow_html=True)
+
+# st.write(df[['Unnamed: 0','Home_Distance','Work_Distance','maid']]['maid'].unique().shape)
+
+m = folium.Map(location=[user_lat, user_lon], zoom_start=14)
+folium.Marker(location=[user_lat, user_lon], radius=4, color='red', fill=True, fill_color='red',
+                    fill_opacity=1).add_to(m)
+folium.Circle(
+    location=(user_lat, user_lon),
+    radius=lookalike_radius*1000,
+    color='green',
+    fill=True,
+    fill_opacity=0.3,
+    ).add_to(m)
+
+for _, row in df.iterrows():
+    distance = haversine(user_lat, user_lon, row['latitude'], row['longitude'])
+    if distance <= lookalike_radius:
+        folium.CircleMarker(location=[row['latitude'], row['longitude']], radius=2, color='blue', fill=True, fill_color='blue',
+                            fill_opacity=1).add_to(m)
 
 
-center = (float(user_input_lat), float(user_input_lon))
-if user_input_lat =='-37.82968153089708' and user_input_lon=='145.05531534492368':
-    placeholder.markdown("Location: Dan Murphy's Camberwell")
 
-st.markdown("<p style='color: red;'>Select Location:</p>", unsafe_allow_html=True)
-options = ["Search by Radius", "Search by Polygon"]
-options=st.radio("Select Search Option", options=options, horizontal=True)
+items = {}
+no_of_locations = st.text_input("Enter No of Comparible Places : ",value=5)
+for i in range(1, int(no_of_locations) + 1):
+    location_name = f"loc{i}"
+    items[location_name] = []
+    items['user_loc']=[]
 
-if options == 'Search by Radius':
-    dist = st.radio("Select Distance Unit", ["Meters","Kilometers"],horizontal=True)
-    if dist == 'Kilometers':
-        radius_input = st.slider("Select radius (in kilometers):", min_value=1, max_value=100, value=10)
-        unit = 'km'
-    elif dist == 'Meters':
-        radius_input = st.slider("Select radius (in Meters):", min_value=1, max_value=1000, value=15)
-        radius_m=radius_input
-        radius_input=radius_input/1000
-        unit = 'm'
+if  no_of_locations:
+    no_of_locations = int(no_of_locations)
+    industry_list = ['lon-lat','Location','Distance']
+    user_coordinates = []
 
-    if user_input_lat and user_input_lon :
-        user_lat = float(user_input_lat)
-        user_lon = float(user_input_lon)
-        visitors_data_inplace = df[df.apply(lambda row: haversine(user_lat, user_lon, row['latitude'], row['longitude']) <= radius_input, axis=1)]
-        visitors_data_all= df[df['maid'].isin(visitors_data_inplace['maid'])]
-        visitors_data_all[['Home_latitude', 'Home_longitude']] = visitors_data_all['homegeohash9'].apply(decode_geohash)
-        visitors_data_all[['Work_latitude', 'Work_longitude']] = visitors_data_all['workgeohash'].apply(decode_geohash)
-        visitors_data_all['Home_Distance'] = visitors_data_all.apply(lambda row: haversine(user_lat, user_lon, float(row['Home_latitude']), float(row['Home_longitude'])), axis=1)
-        visitors_data_all['Work_Distance'] = visitors_data_all.apply(lambda row: haversine(user_lat, user_lon, float(row['Work_latitude']), float(row['Work_longitude'])), axis=1)
-        visitors_data_all=visitors_data_all[["maid","latitude","longitude","Home_latitude","Home_longitude","Work_latitude","Work_longitude","Home_Distance","Work_Distance"]]
-        # visitors_data_all = visitors_data_all.astype({col: float for col in visitors_data_all.columns})
+    default_values = [["""-37.83048693207621, 145.05592287738588\n
+-37.83030085905829, 145.05619157963474\n
+-37.83026077076795, 145.05613813428943\n
+-37.83044526994285, 145.0558759836133""",'Deco Pizza Bar',130.0], 
+["""-37.83070476643869, 145.05617241480425\n
+-37.83080419639975, 145.0562874136186\n
+-37.83066066917268, 145.05650802500193\n
+-37.83055951208518, 145.0563812903305""",'East End Wine Bar',170.0], 
+["""-37.82671827878225, 145.05708479417163\n
+-37.826823149066556, 145.05706266613717\n
+-37.82683850865025, 145.05719208280453\n
+-37.82673257904397, 145.05720884625617""",'East of Everything',500.0], 
+["""-37.82645174444236, 145.057577711162\n
+-37.82629586014539, 145.0576019921984\n
+-37.8262629038709, 145.0571824766655\n
+-37.82641433358738, 145.0571531562729""",'Palace Hotel',500.0], 
+["""-37.82437736290543, 145.0493417080464\n
+-37.82456910141952, 145.0492759944859\n
+-37.82457969449895, 145.0493846240304\n
+-37.82438689667038, 145.04941949198823""",'The Tower',900.0]]
 
-    st.markdown(f"<font color='orange'><b>Total Count inside Location: {len(visitors_data_all)}</b></font>", unsafe_allow_html=True)
+    location_data1 = []
+    location_data = []
 
-    st.markdown('<p style="color: red;">Select Area for Lookalike</p>', unsafe_allow_html=True)
-    lookalike_radius = st.slider("Select radius (in kilometers):", min_value=1, max_value=100, value=2)
-    non_visitors_data = df[df.apply(lambda row: haversine(user_lat, user_lon, row['latitude'], row['longitude']) <= lookalike_radius, axis=1)]
-    st.markdown(f"<font color='orange'><b>Total Count inside Population: {len(non_visitors_data)}</b></font>", unsafe_allow_html=True)
+    for idx in range(no_of_locations):
+        lon_lat_location_data=[]
+        row = st.columns(3)
 
-    non_visitors_data= non_visitors_data[~non_visitors_data['maid'].isin(visitors_data_all['maid'])]
-    non_visitors_data[['Home_latitude', 'Home_longitude']] = non_visitors_data['homegeohash9'].apply(decode_geohash)
-    non_visitors_data[['Work_latitude', 'Work_longitude']] = non_visitors_data['workgeohash'].apply(decode_geohash)
-    non_visitors_data['Home_Distance'] = non_visitors_data.apply(lambda row: haversine(user_lat, user_lon, float(row['Home_latitude']), float(row['Home_longitude'])), axis=1)
-    non_visitors_data['Work_Distance'] = non_visitors_data.apply(lambda row: haversine(user_lat, user_lon, float(row['Work_latitude']), float(row['Work_longitude'])), axis=1)
-    non_visitors_data=non_visitors_data[["latitude","longitude","Home_latitude","Home_longitude","Work_latitude","Work_longitude","Home_Distance","Work_Distance"]]
-    non_visitors_data = non_visitors_data.astype({col: float for col in non_visitors_data.columns})
-    PCA_plot(visitors_data_all,non_visitors_data)
-    lookalike_audience,nearest_neighbors_indices = find_lookalike_audience(visitors_data_all, non_visitors_data)
-    lookalike_audience=lookalike_audience.sort_values('Distance')
-    lookalike_audience=lookalike_audience[lookalike_audience['Distance']<int(len(lookalike_audience)*0.1)]
+        # Get the default values for the current location
+        default_value = default_values[idx] if idx < len(default_values) else ['0.0,0.0','',0.0]
 
-    combined_data1 = pd.concat([visitors_data_all, non_visitors_data])
-
-    # st.write(combined_data1)
+        for i, industry in enumerate(industry_list):
+            if industry == 'Location':
+                # Display the location identifier separately
+                location_identifier = row[i].text_input(f"{industry} - Location {idx + 1}", value=default_value[i])
+                location_data1.append(location_identifier)
 
 
-else:
-    no_of_polygon_points = st.text_input("Enter No of Polygon Points : ",value=4)
-    if  no_of_polygon_points:
-        no_of_polygon_points = int(no_of_polygon_points)
-        entries = ['latitude', 'longitude']
-        polygon_coordinates = []
+            elif industry == 'lon-lat':
+                lon_lat_location_identifier = row[i].text_area(f"{industry} - Location {idx + 1}", value=default_value[i])
 
-        default_values = [[-37.82985886920226, 145.05526523266056], [-37.82968592529212, 145.05507037701463], [-37.82949052083052, 145.055352996116], [-37.82965509221098, 145.0555732778134]]
-        for idx in range(no_of_polygon_points):
-            location_data = []
-            row = st.columns(2)
-            default_value = default_values[idx] if idx < len(default_values) else [0.0, 0.0]
 
-            for i, industry in enumerate(entries):
-                value = row[i].number_input(f"{industry} - Point {idx + 1}", format="%.15f", value=default_value[i])
+            else:
+                # Display numeric fields for latitude, longitude, and radius
+                value = row[i].number_input(f"{industry} - Location {idx + 1}", format="%.0f", value=default_value[i])
                 location_data.append(value)
 
+        # Append the location identifier to the location data
+        # location_data.append(location_identifier)
+        lon_lat_location_data.append(lon_lat_location_identifier)
+        user_coordinates.append(lon_lat_location_data)
 
-            polygon_coordinates.append(location_data)
+dfs=[]
+for idx, coordinates_list in enumerate(user_coordinates):
+    # Parse coordinates from the list
+    coordinates = [tuple(map(float, coord.split(','))) for coord in coordinates_list[0].split('\n') if coord.strip()]
 
+    # Add the polygon to the map
+    folium.Polygon(locations=coordinates, color='red', fill=True, fill_color='red', fill_opacity=0.4).add_to(m)
+    polygon_shapely = Polygon(coordinates)
+
+    maid_counts = Counter()
+    matching_records=[]
+    for index, row in df.iterrows():
+        lat = row['latitude']
+        lon = row['longitude']
+        datetimestamp=row['datetimestamp']
         
-        placeholder = st.sidebar.empty()
+        point = Point(lat, lon)
+        if point.within(polygon_shapely):
+            maid = row['maid']
+            maid_counts[maid] += 1
+            matching_records.append([maid,lat,lon,datetimestamp])
 
-        if polygon_coordinates[0][0] ==-37.829858869202262 and polygon_coordinates[0][1]==145.055265232660560:
-            placeholder.markdown("Location: Dan Murphy's Camberwell")
+    filtered_df=pd.DataFrame(matching_records,columns=["maid","latitude","longitude","datetimestamp"])
+    count_within_radius_df_maid = filtered_df.groupby('maid').size().reset_index(name=location_data1[idx]).sort_values(by=location_data1[idx], ascending=False)
 
+    # count_within_radius_df_maid = filtered_df.groupby('maid').size().reset_index(name=location_data1[idx]).sort_values(by=location_data1[idx], ascending=False)
+    # # df1=count_within_radius_df_maid.join(df,on='maid',how='inner')
+    merged_df = count_within_radius_df_maid.merge(df, on='maid', how='left')
+    merged_df = merged_df.iloc[:, :2].join(merged_df[['Home_Distance', 'Work_Distance']])
+    merged_df = merged_df.drop_duplicates()
+    dfs.append(merged_df)
+    # st.write(merged_df)
 
-        total_lat = 0
-        total_lon = 0
-        num_vertices = len(polygon_coordinates)
-        for vertex in polygon_coordinates:
-            total_lat += vertex[0]
-            total_lon += vertex[1]
+result_df = dfs[0]
 
-        center_lat = total_lat / num_vertices
-        center_lon = total_lon / num_vertices
-        polygon_shapely = Polygon(polygon_coordinates)
+for idx, df in enumerate(dfs[1:], start=2):
+    result_df = pd.merge(result_df, df, on='maid', how='outer', suffixes=('', f'_{idx}'))
 
-        matching_records=[]
-        # Iterate through the rows of the DataFrame
-        for index, row in df.iterrows():
-            # Extract latitude and longitude from the current row
-            lat = row['latitude']
-            lon = row['longitude']
-            
-            point = Point(lat, lon)
-            # Check if the point is within the Shapely polygon
-            if point.within(polygon_shapely):
-                maid = row['maid']
-                # Increment the count for the maid
-                matching_records.append([maid,lat,lon])
+# Fill NaN values with 0
+result_df.fillna(0, inplace=True)
 
-        def distance_to_polygon(lat, lon):
-            point = Point(lat, lon)  # Shapely Point requires (lon, lat) format
-            if point.within(polygon_shapely):
-                return 0
-            else:
-                return 1
-
-        visitors_data_inplace=pd.DataFrame(matching_records,columns=['maid','latitude','longitude'])
-        visitors_data_all= df[df['maid'].isin(visitors_data_inplace['maid'])]
-        visitors_data_all[['Home_latitude', 'Home_longitude']] = visitors_data_all['homegeohash9'].apply(decode_geohash)
-        visitors_data_all[['Work_latitude', 'Work_longitude']] = visitors_data_all['workgeohash'].apply(decode_geohash)
-        visitors_data_all['Home_Distance'] = visitors_data_all.apply(lambda row: haversine(center_lat, center_lon, float(row['Home_latitude']), float(row['Home_longitude'])), axis=1)
-        visitors_data_all['Work_Distance'] = visitors_data_all.apply(lambda row: haversine(center_lat, center_lon, float(row['Work_latitude']), float(row['Work_longitude'])), axis=1)
-        visitors_data_all=visitors_data_all[["maid","latitude","longitude","Home_latitude","Home_longitude","Work_latitude","Work_longitude","Home_Distance","Work_Distance"]]
-        # visitors_data_all = visitors_data_all.astype({col: float for col in visitors_data_all.columns})
-
-        st.markdown(f"<font color='orange'><b>Total Count inside Location: {len(visitors_data_all)}</b></font>", unsafe_allow_html=True)
-
-    # st.write(visitors_data_all)
-    # st.write(len(visitors_data_inplace))
-    # st.write(len(visitors_data_all))
-    st.markdown('<p style="color: red;">Select Area for Lookalike</p>', unsafe_allow_html=True)
-    lookalike_radius = st.slider("Select radius (in kilometers):", min_value=1, max_value=100, value=2)
-    non_visitors_data = df[df.apply(lambda row: haversine(center_lat, center_lon, row['latitude'], row['longitude']) <= lookalike_radius, axis=1)]
-    st.markdown(f"<font color='orange'><b>Total Count inside Population: {len(non_visitors_data)}</b></font>", unsafe_allow_html=True)
-
-    non_visitors_data= non_visitors_data[~non_visitors_data['maid'].isin(visitors_data_all['maid'])]
-    non_visitors_data[['Home_latitude', 'Home_longitude']] = non_visitors_data['homegeohash9'].apply(decode_geohash)
-    non_visitors_data[['Work_latitude', 'Work_longitude']] = non_visitors_data['workgeohash'].apply(decode_geohash)
-    non_visitors_data['Home_Distance'] = non_visitors_data.apply(lambda row: haversine(center_lat, center_lon, float(row['Home_latitude']), float(row['Home_longitude'])), axis=1)
-    non_visitors_data['Work_Distance'] = non_visitors_data.apply(lambda row: haversine(center_lat, center_lon, float(row['Work_latitude']), float(row['Work_longitude'])), axis=1)
-    non_visitors_data=non_visitors_data[["latitude","longitude","Home_latitude","Home_longitude","Work_latitude","Work_longitude","Home_Distance","Work_Distance"]]
-    non_visitors_data = non_visitors_data.astype({col: float for col in non_visitors_data.columns})
-
-    PCA_plot(visitors_data_all,non_visitors_data)
-
-    lookalike_audience = find_lookalike_audience(visitors_data_all, non_visitors_data)
-    
-    lookalike_audience=lookalike_audience.sort_values('Distance')
-    lookalike_audience=lookalike_audience[lookalike_audience['Distance']<int(len(lookalike_audience)*0.1)]
-
-    # prediction_lookalike=df[~df['maid'].isin(visitors_data_inplace['maid'])]['maid']
-    # non_visitors_data.iloc[lookalike_audience.index]
-
-st.write('Lookalike Audience',df.iloc[lookalike_audience.index]['maid'].unique()[:5])
-st.markdown(f"<font color='orange'><b>Lookalike Audience Unique Count: {df.iloc[lookalike_audience.index]['maid'].nunique()}</b></font>", unsafe_allow_html=True)
+# result_df.rename(columns={'Home_Distance_2': 'Home_Distance', 'Work_Distance_2': 'Work_Distance'}, inplace=True)
 
 
+# Create a DataFrame with distances from loc1 to other locations
+data = {location: [value] for location, value in zip(location_data1, location_data)}
+df = pd.DataFrame(data)
+# Calculate the distances from loc1 to other locations
+distances = df.iloc[0].values
+# st.write((distances))
 
+reference_distance = distances[0]
+normalized_distances = 1.0 / (distances)
 
+# Determine the lowest distance
+min_distance = min(distances)
 
+# Calculate weights inversely proportional to distances
+weights = normalized_distances / min_distance
 
+# Normalize weights to a 0-1 scale
+sum_weights = np.sum(weights)
+scaled_weights = weights / sum_weights
 
+# Create a dictionary of location weights
+location_weights = {location: weight for location, weight in zip(location_data1, scaled_weights)}
 
+st.write("location weights",location_weights)
+
+result_df['Score'] = 0  # Initialize the Score column
+
+# Iterate over each location and its corresponding weight
+for location, weight in location_weights.items():
+    # Multiply the values of the location column with its weight and add to the Score column
+    result_df['Score'] += result_df[location] * weight
+
+st.markdown(f"<font color='orange'><b>Lookalike Audience Count: {len(result_df)}</b></font>", unsafe_allow_html=True)
+
+with st.expander('View Lookalike Audience'):
+    st.write(result_df.sort_values(by=['Score', 'Home_Distance'], ascending=[False, True]))
+
+col1,col2 = st.columns((0.6,0.3))
+with col1:
+    folium_static(m)
+with col2:
+    with st.expander("About",expanded=True):
+        st.write("""
+                :orange[**This lookalike module finds similar people who visits nearby similar places near the specified 
+                 location(Dan Murphy). It calculates a score based on how close these places are to the specified location and 
+                 how often they are visited and how many multiple locations they visits. It prioritizes places that are closer and frequently visited by people.**]
+
+                - :green[Identify the population within a 10km radius of the specified location (Dan Murphy's) whose residences 
+                 fall within this radius.]
+                - :green[Determine similar nearby places (such as pubs and bars) for the given location and represent them as polygons.]
+                - :green[Assign weights to prioritize each specified location based on its distance from Dan Murphy's. Locations closer to Dan Murphy's receive higher weights.]
+                - :green[Calculate the visitation frequency for each specified places.]
+                - :green[Combine all location visitations and calculate scores for each location based on the assigned weights.]
+                - :green[Sort the maids by their scores, with the highest score indicating the most probable lookalike audience.]
+                 """)

@@ -27,6 +27,7 @@ body {
 st.write(custom_css, unsafe_allow_html=True)
 st.markdown(custom_css, unsafe_allow_html=True)
 st.title("Home Work Location Insights ")
+st.markdown(":green[**This page identifies individuals whose residences and workplaces fall within a specified radius. It's useful for targeting email and SMS communications to people located near a particular area.**]")
 st.markdown(':green[**These all points are representing based on all device Mobile Advertisement Ids in people table**]')
 
 

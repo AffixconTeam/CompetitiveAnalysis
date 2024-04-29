@@ -30,7 +30,8 @@ st.write(custom_css, unsafe_allow_html=True)
 st.markdown(custom_css, unsafe_allow_html=True)
 
 st.title("🎯Location Insights")
-st.markdown(':green[**idetify the people profile based on custom boundaries in the Map**]')
+# st.markdown(':green[**idetify the people profile based on custom boundaries in the Map**]')
+st.markdown(':green[**This page filters individuals based on their visits within specified custom boundaries on the map. It provides insights into their visitation patterns, including variations by day and hour, and highlights points of interest associated with their visits.**]')
 st.markdown(':green[**These all points are representing based on all device Mobile Advertisement Ids (MAID) in people movement table**]')
 
 

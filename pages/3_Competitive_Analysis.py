@@ -29,7 +29,7 @@ st.write(custom_css, unsafe_allow_html=True)
 st.markdown(custom_css, unsafe_allow_html=True)
 
 st.title("Competitive Analysis")
-
+st.markdown(":green[**This page compares the visitation frequency of user-specified locations, such as Dan Murphy, with various competitor locations. It analyzes hourly and daily visitation patterns to provide insights into user behavior and competitor presence.**]")
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371  # Radius of the Earth in kilometers
 
