@@ -75,10 +75,11 @@ if user_input_lat and user_input_lon :
     df[['Home_latitude', 'Home_longitude']] = df['homegeohash9'].apply(decode_geohash)
     df[['Work_latitude', 'Work_longitude']] = df['workgeohash'].apply(decode_geohash)
     df = df[df.apply(lambda row: haversine(user_lat, user_lon, float(row['Home_latitude']), float(row['Home_longitude'])) <= lookalike_radius, axis=1)]
+    home_unique=df.homegeohash9.nunique()
     # df['Home_Distance'] = df.apply(lambda row: haversine(user_lat, user_lon, float(row['Home_latitude']), float(row['Home_longitude'])), axis=1)
     # df['Work_Distance'] = df.apply(lambda row: haversine(user_lat, user_lon, float(row['Work_latitude']), float(row['Work_longitude'])), axis=1)
 
-st.markdown(f"<font color='orange'><b>Total Count inside Population: {len(df)}</b></font>", unsafe_allow_html=True)
+st.markdown(f"<font color='orange'><b>Total Count inside Population: {home_unique}</b></font>", unsafe_allow_html=True)
 
 # st.write(df[['Unnamed: 0','Home_Distance','Work_Distance','maid']]['maid'].unique().shape)
 
