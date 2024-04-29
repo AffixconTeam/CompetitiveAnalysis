@@ -13,7 +13,7 @@ from shapely.geometry import Point, Polygon
 from streamlit_folium import folium_static
 from collections import Counter
 
-st.set_page_config(page_title='Geo Segmentation',page_icon=':earth_asia:',layout='wide')
+st.set_page_config(page_title='Geo Location Work Home',page_icon=':earth_asia:',layout='wide')
 custom_css = """
 <style>
 body {

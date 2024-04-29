@@ -14,7 +14,7 @@ from itertools import combinations
 import plotly.graph_objects as go
 # Set up Streamlit app
 
-st.set_page_config(page_title='Geo Segmentation',page_icon=':earth_asia:',layout='wide')
+st.set_page_config(page_title='Competitive Analysis',page_icon=':earth_asia:',layout='wide')
 custom_css = """
 <style>
 body {

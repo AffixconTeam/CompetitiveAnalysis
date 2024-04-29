@@ -11,7 +11,7 @@ from sklearn.decomposition import PCA
 import plotly.express as px
 from sklearn.neighbors import NearestNeighbors
 
-st.set_page_config(page_title='Geo Segmentation',page_icon=':earth_asia:',layout='wide')
+st.set_page_config(page_title='Lookalike',page_icon=':earth_asia:',layout='wide')
 custom_css = """
 <style>
 body {

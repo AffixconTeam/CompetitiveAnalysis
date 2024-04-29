@@ -13,6 +13,7 @@ from sklearn.neighbors import NearestNeighbors
 import folium
 from streamlit_folium import folium_static
 from collections import Counter
+import numpy as np
 
 st.set_page_config(page_title='Lookalike',page_icon=':earth_asia:',layout='wide')
 custom_css = """
@@ -27,7 +28,8 @@ body {
 """
 st.write(custom_css, unsafe_allow_html=True)
 st.markdown(custom_css, unsafe_allow_html=True)
-
+st.title(":orange[**Lookalike Model**]")
+st.markdown(':green[**This page displays a lookalike model that identifies individuals who visit similar locations, indicating shared interests. It highlights people who frequent comparable places, suggesting common preferences and behaviors.**]')
 def decode_geohash(geohash):
     if pd.notna(geohash):
         try:
@@ -100,7 +102,7 @@ for _, row in df.iterrows():
 
 
 items = {}
-no_of_locations = st.text_input("Enter No of Addresses : ",value=5)
+no_of_locations = st.text_input("Enter No of Comparible Places : ",value=5)
 for i in range(1, int(no_of_locations) + 1):
     location_name = f"loc{i}"
     items[location_name] = []
@@ -207,10 +209,6 @@ result_df.fillna(0, inplace=True)
 # result_df.rename(columns={'Home_Distance_2': 'Home_Distance', 'Work_Distance_2': 'Work_Distance'}, inplace=True)
 
 
-
-import pandas as pd
-import numpy as np
-
 # Create a DataFrame with distances from loc1 to other locations
 data = {location: [value] for location, value in zip(location_data1, location_data)}
 df = pd.DataFrame(data)
@@ -246,5 +244,9 @@ st.markdown(f"<font color='orange'><b>Lookalike Audience Count: {len(result_df)}
 with st.expander('View Lookalike Audience'):
     st.write(result_df.sort_values(by=['Score', 'Home_Distance'], ascending=[False, True]))
 
-
-folium_static(m)
+col1,col2 = st.columns((0.6,0.3))
+with col1:
+    folium_static(m)
+with col2:
+    with st.expander("About",expanded=True):
+        st.write(':orange[**This lookalike module finds similar people who visits nearby similar places near the specified location(Dan Murphy). It calculates a score based on how close these places are to the specified location and how often they are visited and how many multiple locations they visits. It prioritizes places that are closer and frequently visited by people.**]')
