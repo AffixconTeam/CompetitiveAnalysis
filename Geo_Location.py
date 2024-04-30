@@ -190,10 +190,6 @@ def more_insights(count_within_radius_df,user_lat,user_lon):
                      highlighting any trends or fluctuations in the data over the course of the month.**]
                 - :orange[**benefits:- we can identify most people visited date and which date would be the promotion date**]
                      """)
-        with st.expander(':red[**ETA**]'):
-            st.write('''
-                    - 1.ETA per location: :orange[10 Minutes]
-                    - 2.Cost per location: :orange[local cost]''')
 
     col1,col2=st.columns((0.6,0.3))
 
@@ -206,10 +202,6 @@ def more_insights(count_within_radius_df,user_lat,user_lon):
                      highlighting any trends or fluctuations throughout the day.**]
                 - :orange[**benefits:- we can identify most people visited hour and peek hour**]
                      """)
-        with st.expander(':red[**ETA**]'):
-            st.write('''
-                    - 1.ETA per location: :orange[10 Minutes]
-                    - 2.Cost per location: :orange[local cost]''')
 
     col1,col2=st.columns((0.6,0.3))
 
@@ -223,10 +215,7 @@ def more_insights(count_within_radius_df,user_lat,user_lon):
                 - :orange[**benefits:- we can identify variations between day and weekday patterns throughout the seelcted date range**]
                      """)     
 
-        with st.expander(':red[**ETA**]'):
-            st.write('''
-                    - 1.ETA per location: :orange[10 Minutes]
-                    - 2.Cost per location: :orange[local cost]''')
+
 
 
     heatmap_data = pandas_df.pivot_table(index='day', columns='hour', aggfunc='size')
@@ -266,10 +255,7 @@ def more_insights(count_within_radius_df,user_lat,user_lon):
                 - :orange[**Hourly Breakdown: Know when customers are most active during the day.**]
                 - :orange[**Day-to-Day Changes: Notice differences between weekdays and weekends.**]""")
 
-        with st.expander(':red[**ETA**]'):
-            st.write('''
-                    - 1.ETA per location: :orange[10 Minutes]
-                    - 2.Cost per location: :orange[local cost]''')
+
 
     hour_difference_df = count_within_radius_df.groupby(['maid', 'date']).agg(
         {'datetimestamp': lambda x: (x.max() - x.min()).total_seconds() / 3600}
@@ -309,10 +295,7 @@ def more_insights(count_within_radius_df,user_lat,user_lon):
                 :orange[**The histogram displays the distribution of hour spending ranges, providing insights into the variability of spending durations across same days.**]""")
             st.write("""-:orange[**The "0-2", "2-5", "5-24" hour spending range represents instances where the difference between the maximum and minimum spending time within the same day.**]""")
 
-        with st.expander(':red[**ETA**]'):
-            st.write('''
-                    - 1.ETA per location: :orange[10 Minutes]
-                    - 2.Cost per location: :orange[local cost]''')
+
     # Merge dataframes based on 'maid' column
     count_within_radius_df_filtered = pd.merge(df, count_within_radius_df, on='maid', how='inner', indicator=True)
     count_within_radius_df_filtered = count_within_radius_df_filtered[count_within_radius_df_filtered['_merge'] == 'both']
@@ -350,10 +333,7 @@ def more_insights(count_within_radius_df,user_lat,user_lon):
             # st.write("""
                 # :orange[**The plot represents the latitude and longitude coordinates of individuals who visited a specific area, along with other places of interest they visited. Each point on the plot corresponds to a location where a customer visited, and the clustering of points indicates areas with higher customer visitation.**]""")
             st.write("""-:orange[**This visualization represents the latitude and longitude coordinates of individuals who visited a specific area, along with other places of interest they visited.Provides insights into customer behavior and preferences regarding visitation patterns. It helps identify popular places of interest and areas with high customer traffic, which can be valuable for businesses in understanding customer preferences, optimizing marketing strategies, and making informed decisions related to location-based services or targeted advertising.**]""")
-        with st.expander(':red[**ETA**]'):
-            st.write('''
-                    - 1.ETA per location: :orange[20 Minutes]
-                    - 2.Cost per location: :orange[local cost]''')
+
     return lon_lat
 
 
@@ -617,12 +597,6 @@ if options == 'Search by Radius':
                 - :green[**Work Locations**]
                 - This all points are representing {}{} 
                 """.format(radius_input,unit))
-
-            with st.expander(':red[**ETA**]'):
-                st.write('''
-                         - :ETA per location per month: :orange[20 Minutes]
-                         - :Cost per location per month: :orange[20 USD]''')
-            
         
         # filtered_df_hr=filtered_df[['datetimestamp']].copy()
         # filtered_df_hr['hour'] = filtered_df_hr['datetimestamp'].dt.hour
@@ -933,12 +907,6 @@ else:
                 - This polygon is represent as people who visited selected area within selected date range
                 """.format(unique_count_inside_polygon,filtered_df_homegeo_unique_count,filtered_df_workgeo_unique_count))
 
-            with st.expander(':red[**ETA**]'):
-                st.write('''
-                         - :ETA per location per month: :orange[20 Minutes]
-                         - :Cost per location per month: :orange[20 USD]''')
-            
-
         # diagrams(filtered_df)
         if len(filtered_df) ==0:
             pass
@@ -983,22 +951,6 @@ else:
             with col3:
                 with st.expander("Gender Stats"):
                     st.write(filtered_df.drop_duplicates('maid').value_counts('Gender'))
-
-            overall_time = {"Module": ['Module 01', 'Module 02', 'Module 03','Total'],
-                            "Description": ["Radius Search or Polygon Counts with Map","Visualizations of visitation patterns","Point of Interest Clustering","Total Tasks"],
-                            "Time Taken": ["20 Minutes","1 hour","20 Minutes","1 hour and 45 Minutes"],
-                            "Cost Estimation": ["20 USD/per month","local cost","local cost","20 USD/per month"],
-                            "Resource Person": ["Janithya & Tuan","Tuan","Tuan", "Janithya and Tuan"]}
-            
-            overall_time_df=pd.DataFrame(overall_time)
-            with st.expander("Overall Time and Cost calculation"):
-                # st.write("""
-                # - :Module 01: Radius Search or Polygon only Counts. 
-                # - :Module 02: Interactive Map
-                # - :Module 03: Visualizations of visitation patterns
-                # - :Module 04: Point of Interest Clustering
-                # """)
-                st.write(overall_time_df)
 
     else:
         st.warning("Please Enter polygon points")

@@ -265,13 +265,3 @@ with col2:
                 - :green[Combine all location visitations and calculate scores for each location based on the assigned weights.]
                 - :green[Sort the maids by their scores, with the highest score indicating the most probable lookalike audience.]
                  """)
-        
-overall_time = {"Module": ['Module 01', 'Module 02', 'Module 03','Total'],
-                "Description": ["Radius Search Home,Work location filtering from Home and Work Address Tables","Maid filtering from people table","Filtering all maid records from Movement Table","Total Tasks"],
-                "Time Taken": ["15 Minutes","15 minutes","15 Minutes","1 hour"],
-                "Cost Estimation": ["8 USD/per query","9 USD/per query","20 USD/per month","37 USD/per month per query"],
-                "Resource Person": ["Janithya","Janithya","Janithya and Tuan", "Janithya and Tuan"]}
-
-overall_time_df=pd.DataFrame(overall_time)
-with st.expander("Overall Time and Cost calculation"):
-    st.write(overall_time_df)
