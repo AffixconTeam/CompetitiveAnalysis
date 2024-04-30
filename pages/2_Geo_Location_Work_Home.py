@@ -28,7 +28,7 @@ st.write(custom_css, unsafe_allow_html=True)
 st.markdown(custom_css, unsafe_allow_html=True)
 st.title("Home Work Location Insights ")
 st.markdown(":green[**This page identifies individuals whose residences and workplaces fall within a specified radius. It's useful for targeting email and SMS communications to people located near a particular area.**]")
-st.markdown(':green[**These all points are representing based on all device Mobile Advertisement Ids in people table**]')
+st.markdown(':green[**These all points are representing based on all device Mobile Advertisement Ids in people table with matching Home and Work Address Tables**]')
 
 
 def decode_geohash(geohash):
@@ -164,6 +164,10 @@ def main():
                 - This all points are representing within {}{} 
                 - Benifits:- This can help to send Email, SMS selected area
                 """.format(filtered_df_home_geo_unique_count,filtered_df_workgeo_unique_count,common_items,radius_input,'km'))
+        with st.expander(':red[**ETA**]'):
+            st.write('''
+                        - :ETA per location per month: :orange[20 Minutes]
+                        - :Cost per location per month: :orange[20 USD]''')
 
         # st.write(filtered_df_workgeo_unique_count)
     stats=pd.DataFrame({"Mailing":[12],"SMS":[8],"Telemarketing(Mob / Phn)":[11],"Mobile	Emailing":[16]}).T
@@ -178,12 +182,16 @@ def main():
     # with col1:
     with st.expander("Mobile-Email Stats"):
         st.write(stats)
-    # with col2:
-    #     with st.expander("Age Range Stats"):
-    #         st.write(Age_Range)
-    # with col3:
-    #     with st.expander("Gender Stats"):
-    #         st.write(Gender)
+    overall_time = {"Module": ['Module 01', 'Module 02','Total'],
+                    "Description": ["Radius Search Home,Work location filtering from Home and Work Address Tables","Visualize in Map","Total Tasks"],
+                    "Time Taken": ["15 Minutes","15 Minutes","30 Minutes"],
+                    "Cost Estimation": ["8 USD/per query","local cost","8 USD/per query"],
+                    "Resource Person": ["Janithya","Tuan","Janithya and Tuan"]}
+    
+    overall_time_df=pd.DataFrame(overall_time)
+    with st.expander("Overall Time and Cost calculation"):
+        st.write(overall_time_df)
+    
         
 
 

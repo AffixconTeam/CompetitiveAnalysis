@@ -400,8 +400,14 @@ if  no_of_locations:
 
     # Apply the function to the "Locations" column
     df_common_items_counts['Locations'] = df_common_items_counts['Locations'].apply(replace_loc)
-    # Display the DataFrame
-    st.write('Common records for multiple locations',df_common_items_counts[['Locations','Device count Visited Both Locations']])
+    col1,col2=st.columns((0.6,0.3))
+    with col1:
+        st.write('Common records for multiple locations',df_common_items_counts[['Locations','Device count Visited Both Locations']])
+    with col2:
+        with st.expander(':red[**ETA**]'):
+            st.write('''
+                        - :ETA per location per month: :orange[20 Minutes]
+                        - :Cost per month: :orange[20 USD]''')
 
 else:
     st.warning("Please Enter No of Locations")
@@ -493,3 +499,13 @@ fig1.update_layout(
 
 # Display the clustered bar chart
 st.plotly_chart(fig1)
+
+overall_time = {"Module": ['Module 01', 'Module 02', 'Module 03','Total'],
+                "Description": ["Radius Search Counts with Map","Competitor Analysis","Visualizations of visitation patterns","Total Tasks"],
+                "Time Taken": ["20 Minutes(per location)","30 Minutes","10 Minutes","1 hour"],
+                "Cost Estimation": ["20 USD/per month","local cost","local cost","20 USD/per month"],
+                "Resource Person": ["Janithya & Tuan","Tuan","Tuan", "Janithya and Tuan"]}
+
+overall_time_df=pd.DataFrame(overall_time)
+with st.expander("Overall Time and Cost calculation"):
+    st.write(overall_time_df)
