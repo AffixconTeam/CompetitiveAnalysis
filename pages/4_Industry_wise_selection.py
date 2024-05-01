@@ -242,22 +242,25 @@ filtered_df=df.query('Gender ==@Gender_filter & Age_Range==@age_range_filter & I
 count=len(filtered_df)
 st.text(f"No of records in selected filters: {count}")
 
-with st.expander("View filtered Sample Data"):
-    st.write(filtered_df.sample(10))
+if count !=0:
+    with st.expander("View filtered Sample Data"):
+        st.write(filtered_df.sample(10))
+    selections = [
+        {"selected_industry": selected_industry},
+        {"niche_list": selected_segments},
+        {"age_range_filter": age_range_filter} if  'All' not in age_range_filter else {},
+        {"Gender_filter": Gender_filter} if not 'All' in Gender_filter else {},
+        {"Income_filter": Income_filter} if not 'All' in Income_filter else {},
 
-selections = [
-    {"selected_industry": selected_industry},
-    {"niche_list": selected_segments},
-    {"age_range_filter": age_range_filter} if  'All' not in age_range_filter else {},
-    {"Gender_filter": Gender_filter} if not 'All' in Gender_filter else {},
-    {"Income_filter": Income_filter} if not 'All' in Income_filter else {},
+    ]
+    flat_dict = {}
+    for item in selections:
+        flat_dict.update({key: str(value) for key, value in item.items()})
+    selection_df = pd.DataFrame([flat_dict]).T.rename(columns={0: 'Selections'})
+    csv=selection_df.to_csv().encode('utf-8')
+    st.write(selection_df)
 
-]
-flat_dict = {}
-for item in selections:
-    flat_dict.update({key: str(value) for key, value in item.items()})
-selection_df = pd.DataFrame([flat_dict]).T.rename(columns={0: 'Selections'})
-csv=selection_df.to_csv().encode('utf-8')
-st.write(selection_df)
+    st.download_button("Download Selection table",data=csv, file_name="Selection.csv")
 
-st.download_button("Download Selection table",data=csv, file_name="Selection.csv")
+else:
+    st.warning("No records found!")
