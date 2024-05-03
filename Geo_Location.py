@@ -927,11 +927,11 @@ else:
         with col2:
             with st.expander('About', expanded=True):
                 st.write("""
-                - :blue[**All Devices - {}**]
+                - :blue[**All Devices**]
                 - :orange[**Home Locations - {}**]
                 - :green[**Work Locations - {}**]
                 - This polygon is represent as people who visited selected area within selected date range
-                """.format(unique_count_inside_polygon,filtered_df_homegeo_unique_count,filtered_df_workgeo_unique_count))
+                """.format(filtered_df_homegeo_unique_count,filtered_df_workgeo_unique_count))
 
             with st.expander(':red[**ETA**]'):
                 st.write('''
