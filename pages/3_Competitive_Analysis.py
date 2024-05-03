@@ -493,3 +493,13 @@ fig1.update_layout(
 
 # Display the clustered bar chart
 st.plotly_chart(fig1)
+
+overall_time = {"Module": ['Module 01', 'Module 02', 'Module 03','Total'],
+                "Description": ["Radius Search Counts with Map","Competitor Analysis","Visualizations of visitation patterns","Total Tasks"],
+                "Time Taken": ["20 Minutes(per location)","30 Minutes","10 Minutes","1 hour"],
+                "Cost Estimation": ["20 USD/per month","local cost","local cost","20 USD/per month"],
+                "Resource Person": ["Janithya & Tuan","Tuan","Tuan", "Janithya and Tuan"]}
+
+overall_time_df=pd.DataFrame(overall_time)
+with st.expander("Overall Time and Cost calculation"):
+    st.write(overall_time_df)

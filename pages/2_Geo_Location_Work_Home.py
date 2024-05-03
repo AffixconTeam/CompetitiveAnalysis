@@ -178,12 +178,15 @@ def main():
     # with col1:
     with st.expander("Mobile-Email Stats"):
         st.write(stats)
-    # with col2:
-    #     with st.expander("Age Range Stats"):
-    #         st.write(Age_Range)
-    # with col3:
-    #     with st.expander("Gender Stats"):
-    #         st.write(Gender)
+    overall_time = {"Module": ['Module 01', 'Module 02','Total'],
+                    "Description": ["Radius Search Home,Work location filtering from Home and Work Address Tables","Visualize in Map","Total Tasks"],
+                    "Time Taken": ["15 Minutes","15 Minutes","30 Minutes"],
+                    "Cost Estimation": ["8 USD/per query","local cost","8 USD/per query"],
+                    "Resource Person": ["Janithya","Tuan","Janithya and Tuan"]}
+
+    overall_time_df=pd.DataFrame(overall_time)
+    with st.expander("Overall Time and Cost calculation"):
+        st.write(overall_time_df)
         
 
 
