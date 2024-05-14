@@ -399,6 +399,56 @@ st.markdown("""
     </style>
 """,unsafe_allow_html=True)
 
+###---------------------------------------------------------------------------------###
+
+user_input_lat = st.sidebar.text_input("Enter a User latitude:", value="-37.82968153089708")
+user_input_lon = st.sidebar.text_input("Enter a User longitude :", value="145.05531534492368")
+user_lat = float(user_input_lat)
+user_lon = float(user_input_lon)
+
+lookalike_radius = st.slider("Select Radius for Home Locations (in kilometers):", min_value=1, max_value=100, value=10)
+df[['Home_latitude', 'Home_longitude']] = df['homegeohash9'].apply(decode_geohash)
+df[['Work_latitude', 'Work_longitude']] = df['workgeohash'].apply(decode_geohash)
+df = df[df.apply(lambda row: haversine(user_lat, user_lon, float(row['Home_latitude']), float(row['Home_longitude'])) <= lookalike_radius, axis=1)]
+df['Distance_To_Home (Km)'] = df.apply(lambda row:
+haversine(user_lat, user_lon, float(row['Home_latitude']), float(row['Home_longitude']))
+if pd.notna(row['Home_latitude']) and pd.notna(row['Home_longitude']) else None, axis=1)
+df['Distance_To_WorkPlace (Km)'] = df.apply(lambda row:
+    haversine(user_lat, user_lon, float(row['Work_latitude']), float(row['Work_longitude']))
+    if pd.notna(row['Work_latitude']) and pd.notna(row['Work_longitude']) else None, axis=1)
+
+center = (float(user_input_lat), float(user_input_lon))
+
+m = folium.Map(location=[user_lat, user_lon], zoom_start=17)
+folium.Circle(
+    location=center,
+    radius=lookalike_radius*1000,
+    color='red',
+    fill=True,
+    fill_opacity=0.1,
+    ).add_to(m)
+
+feature_group_home = folium.FeatureGroup(name='Home Locations')
+feature_group_work = folium.FeatureGroup(name='Work Locations')
+
+filtered_df_home_geo_unique_count1 = df[df['Distance_To_Home (Km)']<=lookalike_radius]['homegeohash9'].nunique()
+filtered_df_workgeo_unique_count1 = df[df['Distance_To_WorkPlace (Km)']<=lookalike_radius]['workgeohash'].nunique()
+filtered_df_workgeo_and_home_unique_count1=df[(df['Distance_To_Home (Km)']<=lookalike_radius) & (df['Distance_To_WorkPlace (Km)']<=lookalike_radius)]['workgeohash'].nunique()
+
+for lat, lon in zip(df[df['Distance_To_Home (Km)']<=lookalike_radius]['Home_latitude'], df[df['Distance_To_Home (Km)']<=lookalike_radius]['Home_longitude']):
+    color = 'Orange'
+    folium.CircleMarker(location=[lat, lon], radius=2, color=color, fill=True, fill_color=color,
+                        fill_opacity=1).add_to(feature_group_home)
+for lat, lon in zip(df[df['Distance_To_WorkPlace (Km)']<=lookalike_radius]['Work_latitude'], df[df['Distance_To_WorkPlace (Km)']<=lookalike_radius]['Work_longitude']):
+    color = 'green'
+    folium.CircleMarker(location=[lat, lon], radius=2, color=color, fill=True, fill_color=color,
+                        fill_opacity=1).add_to(feature_group_work)
+feature_group_home.add_to(m)
+feature_group_work.add_to(m)
+
+
+###---------------------------------------------------------------------------------###
+
 options = ["Search by Polygon","Search by Radius"]
 
 options=st.radio("Select Search Option", options=options, horizontal=True)
@@ -460,8 +510,8 @@ if options == 'Search by Radius':
     # st.sidebar.text("Dan Murphy's Camberwell")
 
     placeholder = st.sidebar.empty()
-    user_input_lat = st.sidebar.text_input("Enter a User latitude:", value="-37.82968153089708")
-    user_input_lon = st.sidebar.text_input("Enter a User longitude :", value="145.05531534492368")
+    # user_input_lat = st.sidebar.text_input("Enter a User latitude:", value="-37.82968153089708")
+    # user_input_lon = st.sidebar.text_input("Enter a User longitude :", value="145.05531534492368")
 
 
     center = (float(user_input_lat), float(user_input_lon))
@@ -483,9 +533,9 @@ if options == 'Search by Radius':
     if user_input_lat and user_input_lon :
         user_lat = float(user_input_lat)
         user_lon = float(user_input_lon)
-
+        
         # Create a folium map centered on the user-specified location
-        m = folium.Map(location=[user_lat, user_lon], zoom_start=17)
+        # m = folium.Map(location=[user_lat, user_lon], zoom_start=17)
 
         # Plot sample data as blue points
         for lat, lon in zip(df['latitude'], df['longitude']):
@@ -560,8 +610,8 @@ if options == 'Search by Radius':
             filtered_df_workgeo_and_home_unique_count = filtered_df[(filtered_df['Distance_To_WorkPlace (Km)']<=radius_input) & (filtered_df['Distance_To_Home (Km)']<=radius_input)]['workgeohash'].nunique()
 
             # Add feature groups to the map
-            feature_group_home.add_to(m)
-            feature_group_work.add_to(m)
+            # feature_group_home.add_to(m)
+            # feature_group_work.add_to(m)
 
             # Add legend to the map
             folium.LayerControl().add_to(m)
@@ -577,16 +627,18 @@ if options == 'Search by Radius':
         with col1:
             if dist == 'Kilometers':
                 st.text(f"Total number of Unique devices within {radius_input}{unit} radius: {filtered_df_maid_unique_count}")
-                st.text(f"Total No of devices from Home within {radius_input}{unit} radius: {filtered_df_homegeo_unique_count}")
-                st.text(f"Total No of devices from WorkPlace {radius_input}{unit} radius: {filtered_df_workgeo_unique_count}")
-                st.text(f"Total No of devices both Home and Workplace within {radius_input}{unit} radius: {filtered_df_workgeo_and_home_unique_count}")
+                # st.text(f"Total No of devices from Home within {radius_input}{unit} radius: {filtered_df_homegeo_unique_count}")
+                st.text(f"Total No of devices from Home within {radius_input}{unit} radius: {filtered_df_home_geo_unique_count1}")
+                st.text(f"Total No of devices from WorkPlace {radius_input}{unit} radius: {filtered_df_workgeo_unique_count1}")
+                st.text(f"Total No of devices both Home and Workplace within {radius_input}{unit} radius: {filtered_df_workgeo_and_home_unique_count1}")
                 st.text(f"Total No of devices visited more than once in selected location: {len(freq_Day)}")
 
             else:
                 st.text(f"Total number of Unique devices within {radius_m}{unit} radius: {filtered_df_maid_unique_count}")
-                st.text(f"Total No of devices from Home within {radius_m}{unit} radius: {filtered_df_homegeo_unique_count}")
-                st.text(f"Total No of devices from Workplace {radius_m}{unit} radius: {filtered_df_workgeo_unique_count}")
-                st.text(f"Total No of devices both Home and Workplace within {radius_m}{unit} radius: {filtered_df_workgeo_and_home_unique_count}")
+                # st.text(f"Total No of devices from Home within {radius_m}{unit} radius: {filtered_df_homegeo_unique_count}")
+                st.text(f"Total No of devices from Home within {radius_m}{unit} radius: {filtered_df_home_geo_unique_count1}")
+                st.text(f"Total No of devices from Workplace {radius_m}{unit} radius: {filtered_df_workgeo_unique_count1}")
+                st.text(f"Total No of devices both Home and Workplace within {radius_m}{unit} radius: {filtered_df_workgeo_and_home_unique_count1}")
                 st.text(f"Total No of devices visited more than once in selected location: {len(freq_Day)}")
 
         # with col2:
@@ -819,7 +871,7 @@ else:
 
         center_lat = total_lat / num_vertices
         center_lon = total_lon / num_vertices
-        m = folium.Map(location=[center_lat, center_lon], zoom_start=17)
+        # m = folium.Map(location=[center_lat, center_lon], zoom_start=17)
         polygon_shapely = Polygon(polygon_coordinates)
         for lat, lon in zip(df['latitude'], df['longitude']):
             color = 'blue'
@@ -881,23 +933,23 @@ else:
             filtered_df_homegeo_unique_count = filtered_df[filtered_df['Distance_To_Polygon(Home)']==0]['homegeohash9'].nunique()
             filtered_df_homegeo_unique = filtered_df[filtered_df['Distance_To_Polygon(Home)']==0]
 
-            feature_group_home = folium.FeatureGroup(name='Home Locations')
-            feature_group_work = folium.FeatureGroup(name='Work Locations')
-            for lat, lon in zip(filtered_df_homegeo_unique['latitude'], filtered_df_homegeo_unique['longitude']):
-                color = 'Orange'
-                folium.CircleMarker(location=[lat, lon], radius=2, color=color, fill=True, fill_color=color,
-                                    fill_opacity=1).add_to(feature_group_home)
+            # feature_group_home = folium.FeatureGroup(name='Home Locations')
+            # feature_group_work = folium.FeatureGroup(name='Work Locations')
+            # for lat, lon in zip(filtered_df_homegeo_unique['latitude'], filtered_df_homegeo_unique['longitude']):
+            #     color = 'Orange'
+            #     folium.CircleMarker(location=[lat, lon], radius=2, color=color, fill=True, fill_color=color,
+            #                         fill_opacity=1).add_to(feature_group_home)
 
             filtered_df_workgeo_unique_count = filtered_df[filtered_df['Distance_To_Polygon(Work)']==0]['workgeohash'].nunique()
-            filtered_df_workgeo_unique = filtered_df[filtered_df['Distance_To_Polygon(Work)']==0]
-            for lat, lon in zip(filtered_df_workgeo_unique['latitude'], filtered_df_workgeo_unique['longitude']):
-                color = 'green'
-                folium.CircleMarker(location=[lat, lon], radius=2, color=color, fill=True, fill_color=color,
-                                    fill_opacity=1).add_to(feature_group_work)
+            # filtered_df_workgeo_unique = filtered_df[filtered_df['Distance_To_Polygon(Work)']==0]
+            # for lat, lon in zip(filtered_df_workgeo_unique['latitude'], filtered_df_workgeo_unique['longitude']):
+            #     color = 'green'
+            #     folium.CircleMarker(location=[lat, lon], radius=2, color=color, fill=True, fill_color=color,
+            #                         fill_opacity=1).add_to(feature_group_work)
                 
             filtered_df_workgeo_and_home_unique_count=filtered_df[(filtered_df['Distance_To_Polygon(Home)']==0) & (filtered_df['Distance_To_Polygon(Work)']==0)]['workgeohash'].nunique()
-            feature_group_home.add_to(m)
-            feature_group_work.add_to(m)
+            # feature_group_home.add_to(m)
+            # feature_group_work.add_to(m)
             folium.LayerControl().add_to(m)
 
         else:
@@ -910,9 +962,10 @@ else:
         freq_Day=frequency(filtered_df)
         
         
-        st.text(f"Total No of devices from Home within Boundary: {filtered_df_homegeo_unique_count}")
-        st.text(f"Total No of devices from WorkPlace within Boundary: {filtered_df_workgeo_unique_count}")
-        st.text(f"No of devices both Home and WorkPlace within Boundary: {filtered_df_workgeo_and_home_unique_count}")
+        # st.text(f"Total No of devices from Home within Boundary: {filtered_df_homegeo_unique_count}")
+        st.text(f"Total No of devices from Home within {lookalike_radius}km Radius: {filtered_df_home_geo_unique_count1}")
+        st.text(f"Total No of devices from WorkPlace within {lookalike_radius}km Radius: {filtered_df_workgeo_unique_count1}")
+        st.text(f"No of devices both Home and WorkPlace within {lookalike_radius}km Radius: {filtered_df_workgeo_and_home_unique_count1}")
         st.text(f"Total No of devices visited more than once in selected location: {len(freq_Day)}")
 
         # sum_of_true = same_values_count.get(True, 0)
@@ -931,7 +984,7 @@ else:
                 - :orange[**Home Locations - {}**]
                 - :green[**Work Locations - {}**]
                 - This polygon is represent as people who visited selected area within selected date range
-                """.format(filtered_df_homegeo_unique_count,filtered_df_workgeo_unique_count))
+                """.format(filtered_df_home_geo_unique_count1,filtered_df_workgeo_unique_count1))
 
             with st.expander(':red[**ETA**]'):
                 st.write('''
