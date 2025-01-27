@@ -5,7 +5,7 @@ __pycache__/
 
 # C extensions
 *.so
-
+geo
 # Distribution / packaging
 .Python
 build/
